@@ -280,3 +280,12 @@ input[type=date].input { color-scheme: dark; }
 .pick .avatar { border-color: transparent; opacity: .5; }
 .pick.on { color: var(--text); border-color: var(--cyan); background: rgba(77,141,255,.16); box-shadow: 0 0 14px -5px var(--cyan); }
 .pick.on .avatar { opacity: 1; }
+
+/* ---------- Bandeau de mise à jour ---------- */
+#update-bar { position: fixed; left: 50%; top: calc(var(--safe-top) + 6px); transform: translate(-50%, -140%); z-index: 98; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 16px; background: linear-gradient(120deg, #0a2f6e, #12408f); border: 1px solid rgba(255,255,255,.25); box-shadow: 0 12px 30px rgba(0,0,0,.5); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: transform .35s cubic-bezier(.2,.9,.2,1); max-width: calc(100vw - 24px); }
+#update-bar.show { transform: translate(-50%, 0); }
+#update-bar button { height: 32px; padding: 0 12px; border-radius: 10px; font-weight: 700; font-size: 12.5px; }
+#update-bar #upd-now { background: var(--pink); color: #fff; }
+#update-bar #upd-later { color: var(--muted); padding: 0 8px; }
+#update-bar .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; margin-right: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }

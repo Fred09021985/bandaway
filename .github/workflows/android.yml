@@ -41,6 +41,13 @@ jobs:
           cp node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2 www/fonts/inter.woff2
           mkdir -p assets
           npm run icons
+          echo "export const APP_VERSION = ${{ github.run_number }};" > www/js/version.js
+
+      - name: Paquet de mise à jour à distance (update.zip)
+        run: |
+          mkdir -p dist
+          cd www && zip -qr ../dist/update.zip . && cd ..
+          ls -la dist/update.zip
 
       - name: Générer le projet Android
         run: |
@@ -69,5 +76,7 @@ jobs:
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
           name: Mes Cons ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
-          body: APK Android de Mes Cons — télécharge `Bandaway.apk` et installe-le (autorise les sources inconnues).
-          files: dist/Bandaway.apk
+          body: APK Android de Mes Cons — télécharge `Bandaway.apk` et installe-le (autorise les sources inconnues). `update.zip` sert aux mises à jour automatiques dans l'app.
+          files: |
+            dist/Bandaway.apk
+            dist/update.zip

@@ -3,5 +3,18 @@
   "appName": "Mes Cons",
   "webDir": "www",
   "backgroundColor": "#040b18",
-  "android": { "backgroundColor": "#040b18" }
+  "android": {
+    "backgroundColor": "#040b18"
+  },
+  "plugins": {
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "updateUrl": "",
+      "statsUrl": "",
+      "channelUrl": "",
+      "appReadyTimeout": 15000,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true
+    }
+  }
 }

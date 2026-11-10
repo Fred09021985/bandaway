@@ -1,4 +1,5 @@
 import { createStore, local } from './store.js';
+import { APP_VERSION } from './version.js';
 
 /* ═════════════════ Utilitaires ═════════════════ */
 const $ = (s, r = document) => r.querySelector(s);
@@ -600,7 +601,7 @@ function sheetMe() {
       <div class="field"><label>Pseudo</label><input class="input" id="m-name" maxlength="20" value="${esc(state.me.name)}"></div>
       <div class="colors">${AVATAR_COLORS.map((c, i) => `<button class="color-pick ${i === color ? 'on' : ''}" data-i="${i}" style="background:linear-gradient(135deg,${c[0]},${c[1]})"></button>`).join('')}</div>
       <button class="btn btn-primary btn-block" id="m-go">Enregistrer</button>
-      <p class="muted" style="font-size:12px;text-align:center">Synchronisation : ${store.mode === 'cloud' ? '☁️ cloud (temps réel)' : '📱 locale (démo)'} · v1.0</p>
+      <p class="muted" style="font-size:12px;text-align:center">Synchronisation : ${store.mode === 'cloud' ? '☁️ cloud (temps réel)' : '📱 locale (démo)'} · version ${APP_VERSION || 'dev'}</p>
     </div>`, (root) => {
     root.querySelectorAll('.color-pick').forEach((b) => b.onclick = () => { color = +b.dataset.i; root.querySelectorAll('.color-pick').forEach((x) => x.classList.toggle('on', x === b)); });
     $('#m-go', root).onclick = async () => {
@@ -728,12 +729,59 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.matches('#j-code')) $('#j-go')?.click();
 });
 
+
+/* ═════════════════ Mises à jour à distance (Capgo, auto-hébergé) ═════════════════
+   À chaque compilation, GitHub publie update.zip (le contenu de www/) dans la release.
+   Au démarrage, l'app compare son numéro de build à la dernière release ; si elle est
+   plus récente, elle télécharge le paquet et l'applique (tout de suite ou au prochain lancement).
+   Seul le code web (écrans, styles, logique) est mis à jour ainsi : nom, icône ou
+   modules natifs nécessitent toujours un nouvel APK. */
+const UPDATE_API = 'https://api.github.com/repos/Fred09021985/bandaway/releases/latest';
+const Updater = () => window.Capacitor?.Plugins?.CapacitorUpdater;
+
+function updateBar(html) {
+  let el = $('#update-bar');
+  if (!el) { el = document.createElement('div'); el.id = 'update-bar'; document.body.appendChild(el); }
+  el.innerHTML = html; el.classList.add('show');
+  return el;
+}
+
+async function checkLiveUpdate() {
+  const U = Updater();
+  if (!U || !navigator.onLine) return;
+  try {
+    const r = await fetch(UPDATE_API, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+    if (!r.ok) return;
+    const rel = await r.json();
+    const latest = parseInt(String(rel.tag_name || '').replace(/\D/g, ''), 10) || 0;
+    const asset = (rel.assets || []).find((a) => a.name === 'update.zip');
+    if (!asset || latest <= APP_VERSION) return;
+    const version = String(latest);
+    // Déjà téléchargée lors d'un lancement précédent ?
+    let bundle = (await U.list().catch(() => ({ bundles: [] }))).bundles?.find((b) => b.version === version && b.status !== 'error');
+    if (!bundle) {
+      updateBar('<span class="spin"></span>Téléchargement de la mise à jour…');
+      bundle = await U.download({ url: asset.browser_download_url, version });
+    }
+    await U.next({ id: bundle.id });
+    updateBar(`<span>✨ Nouvelle version prête (${version})</span><button id="upd-now">Redémarrer</button><button id="upd-later" aria-label="Plus tard">✕</button>`);
+    $('#upd-now').onclick = () => { updateBar('<span class="spin"></span>Installation…'); U.set({ id: bundle.id }); };
+    $('#upd-later').onclick = () => { $('#update-bar').classList.remove('show'); toast('Elle s’installera au prochain lancement'); };
+  } catch (e) {
+    console.warn('Mise à jour impossible', e);
+    $('#update-bar')?.classList.remove('show');
+  }
+}
+
 /* ═════════════════ Démarrage ═════════════════ */
 (async function boot() {
+  // Confirme au module de mise à jour que cette version démarre bien (sinon retour automatique à la précédente)
+  Updater()?.notifyAppReady?.().catch(() => {});
   for (const c of state.myTrips) { const cached = local.get(`bw:cache:${c}`); if (cached) state.cache[c] = cached; }
   store = await createStore();
   render();
   watchAll();
+  setTimeout(checkLiveUpdate, 1500);
   // Bouton retour Android
   const App = window.Capacitor?.Plugins?.App;
   App?.addListener?.('backButton', () => {

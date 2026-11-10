@@ -35,6 +35,19 @@ Chaque `git push` sur `main` recompile une nouvelle version.
 
 ---
 
+## 🔄 Mises à jour automatiques (sans réinstaller)
+
+L'app intègre [Capgo](https://github.com/Cap-go/capacitor-updater) en mode **auto-hébergé** (aucun compte, aucun serveur tiers) :
+
+1. Tu modifies le code et tu pousses sur `main`.
+2. GitHub Actions compile l'APK **et** publie `update.zip` (le contenu de `www/`) dans la release `build-N`.
+3. Au lancement, chaque téléphone interroge la dernière release GitHub ; si `N` est plus grand que sa version, il télécharge `update.zip` et affiche **« Nouvelle version prête — Redémarrer »** (sinon la mise à jour s'applique au prochain lancement).
+4. Si une version plante au démarrage, l'app revient automatiquement à la précédente.
+
+⚠️ Seul le **code web** (écrans, couleurs, calculs, textes) se met à jour ainsi. Changer le **nom**, l'**icône** ou ajouter un **module natif** nécessite que chacun réinstalle l'APK.
+
+---
+
 ## ☁️ Activer la synchronisation entre amis (gratuit, 5 min)
 
 Par défaut l'app tourne en **mode démo local** (données sur un seul téléphone). Pour que chaque ami voie les dispos et les logements des autres **en temps réel**, branche une base Firebase gratuite :
