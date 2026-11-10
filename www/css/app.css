@@ -289,3 +289,14 @@ input[type=date].input { color-scheme: dark; }
 #update-bar #upd-later { color: var(--muted); padding: 0 8px; }
 #update-bar .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; margin-right: 2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Avis ---------- */
+.feedback-cta { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-top: 4px; text-align: left; border-color: rgba(218,41,28,.35); background: linear-gradient(120deg, rgba(31,95,209,.14), rgba(218,41,28,.10)); }
+.feedback-cta .ic { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 20px; background: rgba(255,255,255,.08); flex: none; }
+.feedback-cta b { display: block; font-family: var(--font-d); font-size: 14.5px; }
+.feedback-cta small { color: var(--muted); font-size: 12px; }
+.feedback-cta .go { margin-left: auto; font-size: 24px; color: var(--muted); }
+.fb-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fb-type { height: 64px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 13px; color: var(--muted); }
+.fb-type span { font-size: 22px; }
+.fb-type.on { color: var(--text); border-color: var(--cyan); background: rgba(77,141,255,.16); box-shadow: 0 0 14px -5px var(--cyan); }

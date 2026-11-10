@@ -178,6 +178,7 @@ function viewHome() {
     </div>
     <div class="section-h"><span class="eyebrow">Mes escapades</span><span class="chip">${codes.length}</span></div>
     ${codes.length ? codes.map(tripCard).join('') : `<div class="glass empty"><div class="big">🧭</div><h3>Aucune escapade pour l'instant</h3><p>Crée ton premier voyage et partage le code à ta bande.</p></div>`}
+    <button class="glass feedback-cta" data-act="feedback"><span class="ic">💬</span><span><b>Une idée pour améliorer Mes Cons ?</b><small>Propose une amélioration ou signale un bug</small></span><span class="go">›</span></button>
     ${store.mode === 'local' ? `<div class="glass mode-banner">⚡<span><b>Mode démo local.</b> Les données restent sur ce téléphone. Ajoute ta config Firebase (voir README) pour synchroniser avec tes amis en temps réel.</span></div>` : ''}
   </section>`;
 }
@@ -631,6 +632,7 @@ function sheetMe() {
       <div class="field"><label>Pseudo</label><input class="input" id="m-name" maxlength="20" value="${esc(state.me.name)}"></div>
       <div class="colors">${AVATAR_COLORS.map((c, i) => `<button class="color-pick ${i === color ? 'on' : ''}" data-i="${i}" style="background:linear-gradient(135deg,${c[0]},${c[1]})"></button>`).join('')}</div>
       <button class="btn btn-primary btn-block" id="m-go">Enregistrer</button>
+      <button class="btn btn-ghost btn-block" data-act="feedback">💬 Donner mon avis sur l’app</button>
       <p class="muted" style="font-size:12px;text-align:center">Synchronisation : ${store.mode === 'cloud' ? '☁️ cloud (temps réel)' : '📱 locale (démo)'} · version ${APP_VERSION || 'dev'}</p>
     </div>`, (root) => {
     root.querySelectorAll('.color-pick').forEach((b) => b.onclick = () => { color = +b.dataset.i; root.querySelectorAll('.color-pick').forEach((x) => x.classList.toggle('on', x === b)); });
@@ -639,6 +641,44 @@ function sheetMe() {
       state.me = { ...state.me, name, color }; local.set('bw:me', state.me);
       for (const c of state.myTrips) { try { await store.update(c, { [`members.${state.me.id}`]: { name, color } }); } catch {} }
       closeSheet(); render(); toast('Profil mis à jour');
+    };
+  });
+}
+
+
+/* ═════════════════ Avis des utilisateurs ═════════════════ */
+const FB_TYPES = [['idea', '💡', 'Idée'], ['bug', '🐞', 'Bug'], ['love', '❤️', 'J’aime']];
+function sheetFeedback() {
+  let type = 'idea';
+  openSheet(`
+    <h2>Donner mon avis</h2>
+    <p class="lead">Une idée, un bug, un truc que tu adores ? Ton message arrive directement chez le créateur de l’app.</p>
+    <div class="stack">
+      <div class="fb-types">${FB_TYPES.map(([k, e, l]) => `<button class="fb-type ${k === type ? 'on' : ''}" data-fbt="${k}"><span>${e}</span>${l}</button>`).join('')}</div>
+      <div class="field"><label id="fb-label">Ton idée</label><textarea class="input" id="fb-msg" maxlength="1000" style="height:140px" placeholder="Ex : pouvoir ajouter des photos aux logements…"></textarea>
+        <div class="muted" style="font-size:11.5px;text-align:right;margin-top:4px"><span id="fb-count">0</span>/1000</div></div>
+      <button class="btn btn-primary btn-block" id="fb-go">Envoyer</button>
+    </div>`, (root) => {
+    const ph = { idea: ['Ton idée', 'Ex : pouvoir ajouter des photos aux logements…'], bug: ['Ce qui ne marche pas', 'Ex : quand je touche « Réglé », rien ne se passe…'], love: ['Ce que tu aimes', 'Ex : le calcul des remboursements, trop pratique !'] };
+    root.querySelectorAll('[data-fbt]').forEach((b) => b.onclick = () => {
+      type = b.dataset.fbt; root.querySelectorAll('[data-fbt]').forEach((x) => x.classList.toggle('on', x === b));
+      $('#fb-label').textContent = ph[type][0]; $('#fb-msg').placeholder = ph[type][1];
+    });
+    $('#fb-msg', root).addEventListener('input', (e) => { $('#fb-count').textContent = e.target.value.length; });
+    $('#fb-go', root).onclick = async () => {
+      const message = $('#fb-msg').value.trim();
+      if (message.length < 3) return toast('Écris quelques mots 🙂');
+      const last = local.get('bw:lastfb', 0);
+      if (Date.now() - last < 30000) return toast('Patiente quelques secondes avant un nouvel avis');
+      const btn = $('#fb-go'); btn.disabled = true; btn.textContent = 'Envoi…';
+      try {
+        await store.sendFeedback({ type, message: message.slice(0, 1000), name: String(state.me?.name || '').slice(0, 20), uid: String(state.me?.id || '').slice(0, 40), version: Number(APP_VERSION) || 0 });
+        local.set('bw:lastfb', Date.now());
+        closeSheet(); toast('Merci pour ton avis ! 🙏');
+      } catch (e) {
+        console.error(e); btn.disabled = false; btn.textContent = 'Envoyer';
+        toast('Envoi impossible, vérifie ta connexion');
+      }
     };
   });
 }
@@ -691,6 +731,7 @@ document.addEventListener('click', async (e) => {
     case 'new': sheetTrip(); break;
     case 'join': sheetJoin(); break;
     case 'edit-me': sheetMe(); break;
+    case 'feedback': closeSheet(); setTimeout(sheetFeedback, 50); break;
     case 'edit-trip': sheetTrip(t); break;
     case 'close-sheet': closeSheet(); break;
     case 'open': openTrip(el.dataset.code); break;

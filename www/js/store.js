@@ -32,6 +32,7 @@ function localStore() {
   });
   return {
     mode: 'local',
+    async sendFeedback(fb) { const all = LS.get('bw:feedback', []); all.push({ ...fb, at: Date.now() }); LS.set('bw:feedback', all); },
     async create(trip) { LS.set(key(trip.code), trip); emit(trip.code); },
     async get(code) { return LS.get(key(code)); },
     async update(code, patch) {
@@ -55,8 +56,11 @@ async function cloudStore() {
   const app = fb.initializeApp(firebaseConfig);
   const db = fb.getFirestore(app);
   const ref = (c) => fb.doc(db, 'trips', c);
+  // Avis des utilisateurs : collection « feedback », création seule (lecture réservée à la console Firebase)
+  const fb_addFeedback = (d) => fb.addDoc(fb.collection(db, 'feedback'), { ...d, at: fb.serverTimestamp() });
   return {
     mode: 'cloud',
+    async sendFeedback(data) { await fb_addFeedback(data); },
     async create(trip) { await fb.setDoc(ref(trip.code), trip); },
     async get(code) { const s = await fb.getDoc(ref(code)); return s.exists() ? s.data() : null; },
     async update(code, patch) {

@@ -48,6 +48,14 @@ L'app intègre [Capgo](https://github.com/Cap-go/capacitor-updater) en mode **au
 
 ---
 
+## 💬 Avis des utilisateurs
+
+Dans l'app : **« Une idée pour améliorer Mes Cons ? »** (accueil) ou **Mon profil → Donner mon avis**. Trois types : 💡 Idée, 🐞 Bug, ❤️ J'aime.
+
+Les avis arrivent dans Firestore, collection **`feedback`** (type, message, pseudo, version de l'app, date). Les utilisateurs peuvent seulement en **envoyer** ; pour les **lire** : [console Firebase → Firestore → Données → feedback](https://console.firebase.google.com/project/bandaway/firestore/databases/-default-/data/~2Ffeedback).
+
+---
+
 ## ☁️ Activer la synchronisation entre amis (gratuit, 5 min)
 
 Par défaut l'app tourne en **mode démo local** (données sur un seul téléphone). Pour que chaque ami voie les dispos et les logements des autres **en temps réel**, branche une base Firebase gratuite :
@@ -62,6 +70,17 @@ Par défaut l'app tourne en **mode démo local** (données sur un seul télépho
        match /trips/{code} {
          allow get, create, update: if code.size() == 6;
          allow list, delete: if false;
+       }
+       match /feedback/{id} {
+         allow create: if request.resource.data.keys().hasOnly(['type', 'message', 'name', 'uid', 'version', 'at'])
+           && request.resource.data.type in ['idea', 'bug', 'love']
+           && request.resource.data.message is string
+           && request.resource.data.message.size() >= 3
+           && request.resource.data.message.size() <= 1000
+           && request.resource.data.name is string
+           && request.resource.data.name.size() <= 20
+           && request.resource.data.at == request.time;
+         allow read, update, delete: if false;
        }
      }
    }
