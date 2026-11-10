@@ -783,27 +783,35 @@ function updateBar(html) {
 async function checkLiveUpdate() {
   const U = Updater();
   if (!U || !navigator.onLine) return;
+  let rel, latest = 0;
   try {
     const r = await fetch(UPDATE_API, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
     if (!r.ok) return;
-    const rel = await r.json();
-    const latest = parseInt(String(rel.tag_name || '').replace(/\D/g, ''), 10) || 0;
-    const asset = (rel.assets || []).find((a) => a.name === 'update.zip');
-    if (!asset || latest <= APP_VERSION) return;
-    const version = String(latest);
-    // Déjà téléchargée lors d'un lancement précédent ?
+    rel = await r.json();
+    latest = parseInt(String(rel.tag_name || '').replace(/\D/g, ''), 10) || 0;
+  } catch { return; }
+  const asset = (rel.assets || []).find((a) => a.name === 'update.zip');
+  if (!asset || latest <= APP_VERSION) return;
+  // Empreinte SHA-256 exigée par le module : fournie par GitHub (digest), sinon notée dans la release
+  const checksum = (String(asset.digest || '').match(/^sha256:([a-f0-9]{64})$/i) || String(rel.body || '').match(/checksum:\s*([a-f0-9]{64})/i) || [])[1];
+  if (!checksum) return;
+  const version = `1.0.${latest}`;
+  try {
     let bundle = (await U.list().catch(() => ({ bundles: [] }))).bundles?.find((b) => b.version === version && b.status !== 'error');
     if (!bundle) {
       updateBar('<span class="spin"></span>Téléchargement de la mise à jour…');
-      bundle = await U.download({ url: asset.browser_download_url, version });
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Délai dépassé')), 90000));
+      bundle = await Promise.race([U.download({ url: asset.browser_download_url, version, checksum: checksum.toLowerCase() }), timeout]);
     }
     await U.next({ id: bundle.id });
-    updateBar(`<span>✨ Nouvelle version prête (${version})</span><button id="upd-now">Redémarrer</button><button id="upd-later" aria-label="Plus tard">✕</button>`);
+    updateBar(`<span>✨ Nouvelle version prête (${latest})</span><button id="upd-now">Redémarrer</button><button id="upd-later" aria-label="Plus tard">✕</button>`);
     $('#upd-now').onclick = () => { updateBar('<span class="spin"></span>Installation…'); U.set({ id: bundle.id }); };
     $('#upd-later').onclick = () => { $('#update-bar').classList.remove('show'); toast('Elle s’installera au prochain lancement'); };
   } catch (e) {
     console.warn('Mise à jour impossible', e);
-    $('#update-bar')?.classList.remove('show');
+    const apk = (rel.assets || []).find((a) => /\.apk$/i.test(a.name));
+    updateBar(`<span>⚠️ Mise à jour impossible</span>${apk ? `<a id="upd-apk" href="${esc(apk.browser_download_url)}" target="_blank" rel="noopener">Installer l’APK</a>` : ''}<button id="upd-later" aria-label="Fermer">✕</button>`);
+    $('#upd-later').onclick = () => $('#update-bar').classList.remove('show');
   }
 }
 
