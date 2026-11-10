@@ -1,7 +1,7 @@
 {
   "appId": "app.bandaway.trips",
-  "appName": "Bandaway",
+  "appName": "Mes Cons",
   "webDir": "www",
-  "backgroundColor": "#07070f",
-  "android": { "backgroundColor": "#07070f" }
+  "backgroundColor": "#040b18",
+  "android": { "backgroundColor": "#040b18" }
 }

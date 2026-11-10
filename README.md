@@ -1,14 +1,15 @@
-# 🏔️ Bandaway
+# 🔴🔵 Mes Cons
 
-**Les escapades entre potes, sans le chaos du groupe WhatsApp.**
+**Les escapades entre potes, sans le chaos du groupe WhatsApp.** (anciennement Bandaway)
 
 Bandaway permet d'organiser des vacances ou un week-end prolongé à plusieurs :
 
 - 📅 **Dates** — on définit une période, chacun coche ses jours (dispo / peut-être / pas dispo), et l'app calcule automatiquement **le meilleur créneau** pour la bande.
 - 🏡 **Logements** — on colle des liens Airbnb, Booking, Abritel… avec le prix ; l'app calcule le **coût par personne** et chacun vote ❤️. Le favori remonte en tête.
+- 💶 **Dépenses** — comme Tricount : qui a payé, pour qui (parts égales), soldes de chacun et liste simplifiée de « qui rembourse qui » ; bouton *Réglé* pour enregistrer un remboursement.
 - 👥 **Bande** — on invite ses amis avec un **code à 6 caractères** (comme Tricount), on voit qui a rempli ses dispos.
 
-Design sombre néon (glassmorphism, aurore animée), 100 % mobile, fonctionne hors ligne.
+Thème bleu marine / rouge / blanc (couleurs PSG), glassmorphism, 100 % mobile, fonctionne hors ligne.
 
 ---
 

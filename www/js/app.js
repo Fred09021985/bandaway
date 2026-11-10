@@ -16,8 +16,9 @@ const fmt = (k, o = { day: 'numeric', month: 'short' }) => fromKey(k).toLocaleDa
 const fmtRange = (a, b) => a === b ? fmt(a, { weekday: 'short', day: 'numeric', month: 'short' }) : `${fmt(a, { weekday: 'short', day: 'numeric' })} → ${fmt(b, { weekday: 'short', day: 'numeric', month: 'short' })}`;
 const periodDays = (t) => { const out = []; let d = fromKey(t.start); const end = fromKey(t.end); while (d <= end && out.length < 200) { out.push(toKey(d)); d = addDays(d, 1); } return out; };
 
-const AVATAR_COLORS = [['#2ff3ff', '#8b5cff'], ['#ff4fd8', '#8b5cff'], ['#b6ff3b', '#2ff3ff'], ['#ffc34d', '#ff4fd8'], ['#7cf9c4', '#3b82f6'], ['#ff8a5c', '#ff4fd8'], ['#c4b5fd', '#2ff3ff'], ['#fde047', '#b6ff3b']];
-const COVERS = ['linear-gradient(135deg,#2ff3ff,#8b5cff)', 'linear-gradient(135deg,#ff4fd8,#8b5cff)', 'linear-gradient(135deg,#b6ff3b,#2ff3ff)', 'linear-gradient(135deg,#ffc34d,#ff4fd8)', 'linear-gradient(135deg,#7cf9c4,#3b82f6)', 'linear-gradient(135deg,#ff8a5c,#8b5cff)'];
+const AVATAR_COLORS = [['#3a7bff', '#0a2f6e'], ['#ff3b2f', '#9b1208'], ['#9fb7e6', '#3d5a96'], ['#ff3b2f', '#1f5fd1'], ['#5cc8ff', '#1f5fd1'], ['#ff7a5c', '#da291c'], ['#c9a227', '#7a5c00'], ['#7aa7ff', '#da291c']];
+const KIT = 'linear-gradient(90deg,#0a2f6e 0 35%,#fff 35% 38%,#da291c 38% 62%,#fff 62% 65%,#0a2f6e 65%)';
+const COVERS = [KIT, 'linear-gradient(135deg,#1f5fd1,#0a2f6e)', 'linear-gradient(135deg,#da291c,#0a2f6e)', 'linear-gradient(135deg,#0a2f6e,#1f5fd1 60%,#da291c)', 'linear-gradient(135deg,#ff3b2f,#9b1208)', 'linear-gradient(160deg,#0a2f6e 0 55%,#da291c 55%)'];
 const EMOJIS = ['🏖️', '🏔️', '🏕️', '🌴', '🏙️', '🍷', '🎿', '🚐', '🏝️', '🎉', '🌋', '🏄', '🛶', '🗼', '🌲', '🍕'];
 
 const initials = (n = '?') => n.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -27,7 +28,9 @@ const avatar = (m, cls = '') => {
 };
 
 const I = {
-  logo: '<svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#07070f"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#fff" opacity=".85"/><circle cx="35" cy="11" r="5.5" fill="#07070f" opacity=".6"/></svg>',
+  logo: '<svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#0a2f6e" opacity=".55"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></svg>',
+  euro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l3 3M15 8l2 2"/></svg>',
   rocket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/></svg>',
@@ -129,7 +132,7 @@ function viewOnboarding() {
   return `<section class="screen">
     <div class="hero-logo">
       <div class="logo-mark">${I.logo}</div>
-      <div class="brand"><span class="grad-text">Bandaway</span></div>
+      <div class="brand"><span class="grad-text">Mes Cons</span></div>
       <p class="tagline">Les escapades entre potes, sans le chaos du groupe WhatsApp.</p>
     </div>
     <div class="glass stack" style="padding:20px">
@@ -164,7 +167,7 @@ function viewHome() {
   const codes = state.myTrips.filter((c) => state.cache[c]);
   return `<section class="screen">
     <div class="topbar">
-      <div class="mini-brand"><span class="mk">${I.logo}</span>Bandaway</div>
+      <div class="mini-brand"><span class="mk">${I.logo}</span>Mes Cons</div>
       <button data-act="edit-me">${avatar(state.me)}</button>
     </div>
     <div class="greet"><span class="eyebrow">Salut ${esc(state.me.name)} 👋</span><h1>Où part<br><span class="grad-text">la bande</span> ?</h1></div>
@@ -181,6 +184,7 @@ function viewHome() {
 function viewTrip() {
   const t = state.trip;
   const links = Object.values(t.links || {});
+  const exps = Object.values(t.expenses || {}).filter((e) => e.type !== 'transfer').length;
   return `<section class="screen">
     <div class="trip-hero">
       <div class="bar">
@@ -199,11 +203,13 @@ function viewTrip() {
     <nav class="glass tabs">
       <button class="tab ${state.tab === 'dates' ? 'on' : ''}" data-act="tab" data-tab="dates">${I.cal}Dates</button>
       <button class="tab ${state.tab === 'stays' ? 'on' : ''}" data-act="tab" data-tab="stays">${I.home}Logements${links.length ? `<span class="n">${links.length}</span>` : ''}</button>
+      <button class="tab ${state.tab === 'money' ? 'on' : ''}" data-act="tab" data-tab="money">${I.euro}Dépenses${exps ? `<span class="n">${exps}</span>` : ''}</button>
       <button class="tab ${state.tab === 'crew' ? 'on' : ''}" data-act="tab" data-tab="crew">${I.users}Bande</button>
     </nav>
-    ${state.tab === 'dates' ? viewDates(t) : state.tab === 'stays' ? viewStays(t) : viewCrew(t)}
+    ${state.tab === 'dates' ? viewDates(t) : state.tab === 'stays' ? viewStays(t) : state.tab === 'money' ? viewMoney(t) : viewCrew(t)}
   </section>
-  ${state.tab === 'stays' ? `<button class="fab" data-act="add-link">${I.plus}Ajouter un lien</button>` : ''}`;
+  ${state.tab === 'stays' ? `<button class="fab" data-act="add-link">${I.plus}Ajouter un lien</button>` : ''}
+  ${state.tab === 'money' && Object.keys(t.expenses || {}).length ? `<button class="fab" data-act="add-exp">${I.plus}Ajouter une dépense</button>` : ''}`;
 }
 
 function viewDates(t) {
@@ -232,8 +238,8 @@ function viewDates(t) {
         const s = mine[k] || '';
         cells.push(`<button class="day ${s}${bd}" data-act="day" data-k="${k}">${fromKey(k).getDate()}<span class="heat"><i style="width:${ratio * 100}%"></i></span></button>`);
       } else {
-        const bg = ratio === 0 ? '' : `background:rgba(182,255,59,${0.08 + ratio * 0.82});${ratio > .55 ? 'color:#07070f;border-color:transparent;' : ''}`;
-        cells.push(`<button class="day${bd}" style="${bg}" data-act="day-info" data-k="${k}">${fromKey(k).getDate()}<span class="cnt" ${ratio > .55 ? 'style="color:#07070fcc"' : ''}>${yes}${maybe ? `+${maybe}` : ''}/${n}</span></button>`);
+        const bg = ratio === 0 ? '' : `background:rgba(182,255,59,${0.08 + ratio * 0.82});${ratio > .55 ? 'color:#04101f;border-color:transparent;' : ''}`;
+        cells.push(`<button class="day${bd}" style="${bg}" data-act="day-info" data-k="${k}">${fromKey(k).getDate()}<span class="cnt" ${ratio > .55 ? 'style="color:#04101fcc"' : ''}>${yes}${maybe ? `+${maybe}` : ''}/${n}</span></button>`);
       }
     }
     return `<div class="month-label">${m.label}</div><div class="wk">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => `<div class="h">${d}</div>`).join('')}${cells.join('')}</div>`;
@@ -247,7 +253,7 @@ function viewDates(t) {
       <div class="big">${fmtRange(best.start, best.end)}</div>
       <div class="sub">${best.len} jour${best.len > 1 ? 's' : ''} · ${Number.isInteger(best.avail) ? best.avail : best.avail.toFixed(1)} / ${best.total} potes dispos tout du long</div>
       <div class="meter"><i style="width:${(best.avail / best.total) * 100}%"></i></div>
-    </div>` : `<div class="glass best"><span class="eyebrow" style="color:var(--lime)">Meilleur créneau</span><div class="big">En attente des dispos…</div><div class="sub">Chacun coche ses jours, Bandaway trouve le créneau idéal.</div></div>`}
+    </div>` : `<div class="glass best"><span class="eyebrow" style="color:var(--lime)">Meilleur créneau</span><div class="big">En attente des dispos…</div><div class="sub">Chacun coche ses jours, Mes Cons trouve le créneau idéal.</div></div>`}
     <div class="glass cal">
       <div class="mode-switch">
         <button class="${state.calMode === 'mine' ? 'on' : ''}" data-act="cal-mode" data-m="mine">Mes dispos ${filled ? `(${filled})` : ''}</button>
@@ -330,6 +336,157 @@ function viewCrew(t) {
   <button class="btn btn-ghost btn-block danger" data-act="leave">Quitter cette escapade</button>`;
 }
 
+
+/* ═════════════════ Dépenses (principe Tricount) ═════════════════
+   Chaque dépense : un payeur, une liste de participants, partage à parts égales.
+   Solde d'une personne = ce qu'elle a payé − sa part de chaque dépense.
+   Les remboursements sont simplifiés : le plus gros débiteur rembourse
+   le plus gros créancier, et ainsi de suite (nombre minimal de virements). */
+const EXP_CATS = [['🛒', 'Courses'], ['🍽️', 'Resto'], ['🏠', 'Logement'], ['🚗', 'Transport'], ['⛽', 'Essence'], ['🍻', 'Soirée'], ['🎟️', 'Activité'], ['💸', 'Autre']];
+const euro = (c) => (c / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+const toCents = (v) => Math.round(parseFloat(String(v).replace(/\s/g, '').replace(',', '.')) * 100);
+
+function splitShares(amount, ids) {
+  const parts = [...ids].sort();
+  const base = Math.floor(amount / parts.length);
+  let rest = amount - base * parts.length;
+  return parts.map((id) => [id, base + (rest-- > 0 ? 1 : 0)]);
+}
+
+function computeBalances(t) {
+  const bal = {}, paid = {}, owed = {};
+  const touch = (id) => { if (!(id in bal)) { bal[id] = 0; paid[id] = 0; owed[id] = 0; } };
+  Object.keys(t.members || {}).forEach(touch);
+  let total = 0;
+  for (const e of Object.values(t.expenses || {})) {
+    const ids = (e.for || []).filter(Boolean);
+    if (!ids.length || !e.amount) continue;
+    touch(e.by); ids.forEach(touch);
+    bal[e.by] += e.amount;
+    if (e.type !== 'transfer') { paid[e.by] += e.amount; total += e.amount; }
+    for (const [id, share] of splitShares(e.amount, ids)) {
+      bal[id] -= share;
+      if (e.type !== 'transfer') owed[id] += share;
+    }
+  }
+  return { bal, paid, owed, total };
+}
+
+function settlements(bal) {
+  const deb = Object.entries(bal).filter(([, v]) => v < 0).map(([id, v]) => ({ id, v: -v }));
+  const cre = Object.entries(bal).filter(([, v]) => v > 0).map(([id, v]) => ({ id, v }));
+  const out = [];
+  while (deb.length && cre.length) {
+    deb.sort((a, b) => b.v - a.v); cre.sort((a, b) => b.v - a.v);
+    const d = deb[0], c = cre[0], x = Math.min(d.v, c.v);
+    if (x > 0) out.push({ from: d.id, to: c.id, amount: x });
+    d.v -= x; c.v -= x;
+    if (d.v <= 0) deb.shift();
+    if (c.v <= 0) cre.shift();
+  }
+  return out;
+}
+
+const memberOf = (t, id) => t.members?.[id] || { name: t.ghosts?.[id] || 'Ancien membre', color: 2 };
+
+function viewMoney(t) {
+  const me = state.me.id;
+  const { bal, paid, owed, total } = computeBalances(t);
+  const tx = settlements(bal);
+  const exps = Object.values(t.expenses || {}).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const myBal = bal[me] || 0;
+  const maxAbs = Math.max(1, ...Object.values(bal).map(Math.abs));
+
+  if (!exps.length) return `<div class="glass empty"><div class="big">💶</div><h3>Aucune dépense</h3><p>Ajoute les courses, le logement, l’essence…<br>Mes Cons calcule qui doit combien à qui.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-exp">${I.plus.replace('<svg', '<svg width="18" height="18"')}Ajouter une dépense</button></div>`;
+
+  return `
+  <div class="stats">
+    <div class="glass stat"><span class="eyebrow">Total</span><b>${euro(total)}</b></div>
+    <div class="glass stat"><span class="eyebrow">Ma part</span><b>${euro(owed[me] || 0)}</b></div>
+    <div class="glass stat ${myBal > 0 ? 'pos' : myBal < 0 ? 'neg' : ''}"><span class="eyebrow">Mon solde</span><b>${myBal > 0 ? '+' : ''}${euro(myBal)}</b></div>
+  </div>
+
+  <div class="section-h"><span class="eyebrow">Remboursements</span>${tx.length ? `<span class="chip">${tx.length}</span>` : ''}</div>
+  <div class="glass" style="padding:4px 0;margin-bottom:18px">
+    ${tx.length ? tx.map((r) => {
+      const f = memberOf(t, r.from), to = memberOf(t, r.to), mine = r.from === me || r.to === me;
+      return `<div class="tx ${mine ? 'mine' : ''}">
+        ${avatar(f, 'sm')}<span class="who">${esc(f.name)}</span>
+        <span class="ar">${I.arrow}</span>
+        ${avatar(to, 'sm')}<span class="who">${esc(to.name)}</span>
+        <b class="amt">${euro(r.amount)}</b>
+        ${mine ? `<button class="btn btn-ghost btn-sm" data-act="settle" data-from="${r.from}" data-to="${r.to}" data-amt="${r.amount}">Réglé ✓</button>` : ''}
+      </div>`;
+    }).join('') : `<div class="tx"><span class="who" style="text-align:center;flex:1">Tout le monde est quitte 🎉</span></div>`}
+  </div>
+
+  <div class="section-h"><span class="eyebrow">Soldes</span></div>
+  <div class="glass" style="padding:6px 14px;margin-bottom:18px">
+    ${Object.keys(bal).sort((a, b) => bal[b] - bal[a]).map((id) => {
+      const m = memberOf(t, id), v = bal[id], w = Math.abs(v) / maxAbs * 50;
+      return `<div class="balrow">${avatar(m, 'sm')}<span class="nm">${esc(m.name)}${id === me ? ' <span class="you">TOI</span>' : ''}<small>payé ${euro(paid[id])}</small></span>
+        <span class="track"><i class="${v >= 0 ? 'p' : 'n'}" style="width:${w}%"></i></span>
+        <b class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v > 0 ? '+' : ''}${euro(v)}</b></div>`;
+    }).join('')}
+  </div>
+
+  <div class="section-h"><span class="eyebrow">Historique</span><span class="chip">${exps.length}</span></div>
+  <div class="glass" style="padding:4px 0">
+    ${exps.map((e) => {
+      const by = memberOf(t, e.by);
+      if (e.type === 'transfer') {
+        const to = memberOf(t, e.for?.[0]);
+        return `<div class="exp transfer"><span class="cat">🤝</span><div class="info"><b>${esc(by.name)} a remboursé ${esc(to.name)}</b><small>${fmtDate(e.at)}</small></div><b class="amt">${euro(e.amount)}</b>${e.createdBy === me ? `<button class="del" data-act="del-exp" data-id="${e.id}" aria-label="Supprimer">${I.trash}</button>` : ''}</div>`;
+      }
+      const n = (e.for || []).length;
+      return `<div class="exp"><span class="cat">${e.cat || '💸'}</span><div class="info"><b>${esc(e.title)}</b><small>Payé par ${esc(by.name)} · ${n === Object.keys(t.members || {}).length ? 'pour tous' : `pour ${n}`} · ${fmtDate(e.at)}</small></div><b class="amt">${euro(e.amount)}</b>${e.createdBy === me || e.by === me ? `<button class="del" data-act="del-exp" data-id="${e.id}" aria-label="Supprimer">${I.trash}</button>` : ''}</div>`;
+    }).join('')}
+  </div>`;
+}
+const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+
+function sheetExpense() {
+  const t = state.trip;
+  const ids = Object.keys(t.members || {});
+  let payer = state.me.id, forIds = new Set(ids), cat = EXP_CATS[0][0];
+  const chip = (id, on, kind) => `<button class="pick ${on ? 'on' : ''}" data-${kind}="${id}">${avatar(t.members[id], 'sm')}${esc(t.members[id].name)}</button>`;
+  openSheet(`
+    <h2>Nouvelle dépense</h2><p class="lead">Partagée à parts égales entre les personnes cochées.</p>
+    <div class="stack">
+      <div class="grid-2" style="grid-template-columns:1.4fr 1fr">
+        <div class="field"><label>Quoi ?</label><input class="input" id="e-title" maxlength="40" placeholder="Courses Carrefour"></div>
+        <div class="field"><label>Montant (€)</label><input class="input" id="e-amt" inputmode="decimal" placeholder="45,80"></div>
+      </div>
+      <div class="field"><label>Catégorie</label><div class="emoji-row">${EXP_CATS.map(([e, l]) => `<button data-cat="${e}" class="${e === cat ? 'on' : ''}" title="${l}">${e}</button>`).join('')}</div></div>
+      <div class="field"><label>Payé par</label><div class="picks" id="e-payer">${ids.map((id) => chip(id, id === payer, 'payer')).join('')}</div></div>
+      <div class="field"><label>Pour qui ? <span id="e-each" class="muted"></span></label><div class="picks" id="e-for">${ids.map((id) => chip(id, true, 'for')).join('')}</div></div>
+      <button class="btn btn-primary btn-block" id="e-go">Ajouter la dépense</button>
+    </div>`, (root) => {
+    const each = () => {
+      const c = toCents($('#e-amt').value);
+      $('#e-each').textContent = c > 0 && forIds.size ? `· ${euro(Math.ceil(c / forIds.size))} / pers.` : '';
+    };
+    $('#e-amt', root).addEventListener('input', each);
+    root.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { cat = b.dataset.cat; root.querySelectorAll('[data-cat]').forEach((x) => x.classList.toggle('on', x === b)); });
+    root.querySelectorAll('[data-payer]').forEach((b) => b.onclick = () => { payer = b.dataset.payer; root.querySelectorAll('[data-payer]').forEach((x) => x.classList.toggle('on', x === b)); });
+    root.querySelectorAll('[data-for]').forEach((b) => b.onclick = () => {
+      const id = b.dataset.for;
+      if (forIds.has(id)) forIds.delete(id); else forIds.add(id);
+      b.classList.toggle('on', forIds.has(id)); each();
+    });
+    $('#e-go', root).onclick = async () => {
+      const amount = toCents($('#e-amt').value);
+      const title = $('#e-title').value.trim() || EXP_CATS.find(([e]) => e === cat)[1];
+      if (!(amount > 0)) return toast('Indique un montant');
+      if (amount > 10000000) return toast('Montant trop élevé');
+      if (!forIds.size) return toast('Coche au moins une personne');
+      const id = uid();
+      await store.update(state.code, { [`expenses.${id}`]: { id, title, amount, cat, by: payer, for: [...forIds], at: Date.now(), createdBy: state.me.id } });
+      closeSheet(); toast(`Dépense ajoutée : ${euro(amount)} 💶`);
+    };
+  });
+}
+
 /* ═════════════════ Feuilles (bottom sheets) ═════════════════ */
 function openSheet(html, onMount) {
   const root = $('#sheet-root');
@@ -337,7 +494,7 @@ function openSheet(html, onMount) {
   onMount?.(root);
   setTimeout(() => root.querySelector('input')?.focus(), 350);
 }
-const closeSheet = () => { $('#sheet-root').innerHTML = ''; };
+const closeSheet = () => { $('#sheet-root').innerHTML = ''; if (state.me && (state.screen === 'trip' || state.myTrips.length)) renderKeepScroll(); };
 
 function sheetTrip(existing) {
   const today = new Date();
@@ -371,7 +528,7 @@ function sheetTrip(existing) {
         } else {
           const code = makeCode();
           const trip = { code, name, destination, emoji, cover: t.cover, start, end, owner: state.me.id, createdAt: Date.now(),
-            members: { [state.me.id]: { name: state.me.name, color: state.me.color } }, avail: {}, links: {} };
+            members: { [state.me.id]: { name: state.me.name, color: state.me.color } }, avail: {}, links: {}, expenses: {} };
           await store.create(trip);
           state.myTrips.unshift(code); saveMyTrips(); state.cache[code] = trip;
           openTrip(code); toast('Escapade créée ! Partage le code 🎉');
@@ -477,11 +634,11 @@ function goHome() { state.screen = 'home'; state.code = null; state.trip = null;
 
 async function shareTrip() {
   const t = state.trip;
-  const text = `🌍 Rejoins « ${t.name} » sur Bandaway !\nCode : ${t.code}\nIndique tes dispos et vote pour les logements 🏡`;
+  const text = `🌍 Rejoins « ${t.name} » sur Mes Cons !\nCode : ${t.code}\nDispos, logements et dépenses au même endroit 🔴🔵`;
   const Share = window.Capacitor?.Plugins?.Share;
   try {
-    if (Share) return await Share.share({ title: 'Bandaway', text, dialogTitle: 'Inviter la bande' });
-    if (navigator.share) return await navigator.share({ title: 'Bandaway', text });
+    if (Share) return await Share.share({ title: 'Mes Cons', text, dialogTitle: 'Inviter la bande' });
+    if (navigator.share) return await navigator.share({ title: 'Mes Cons', text });
   } catch { return; }
   try { await navigator.clipboard.writeText(text); toast('Invitation copiée 📋'); } catch { toast(`Code : ${t.code}`); }
 }
@@ -508,6 +665,15 @@ document.addEventListener('click', async (e) => {
     case 'cal-mode': state.calMode = el.dataset.m; renderKeepScroll(); break;
     case 'share': shareTrip(); break;
     case 'add-link': sheetLink(); break;
+    case 'add-exp': sheetExpense(); break;
+    case 'settle': {
+      const from = el.dataset.from, to = el.dataset.to, amount = +el.dataset.amt;
+      if (!confirm(`${memberOf(t, from).name} a remboursé ${euro(amount)} à ${memberOf(t, to).name} ?`)) return;
+      const id = uid();
+      await store.update(state.code, { [`expenses.${id}`]: { id, type: 'transfer', title: 'Remboursement', amount, by: from, for: [to], at: Date.now(), createdBy: state.me.id } });
+      toast('Remboursement enregistré 🤝'); break;
+    }
+    case 'del-exp': if (confirm('Supprimer cette dépense ?')) await store.update(state.code, { [`expenses.${el.dataset.id}`]: null }); break;
     case 'day': {
       const k = el.dataset.k, cur = t.avail?.[state.me.id]?.[k] || '';
       const next = { '': 'yes', yes: 'maybe', maybe: 'no', no: null }[cur];
@@ -546,8 +712,10 @@ document.addEventListener('click', async (e) => {
     }
     case 'del-link': if (confirm('Supprimer ce logement ?')) await store.update(state.code, { [`links.${el.dataset.id}`]: null }); break;
     case 'leave': {
+      const myBal = computeBalances(t).bal[state.me.id] || 0;
+      if (Math.abs(myBal) > 0) return toast(`Règle d'abord ton solde (${euro(myBal)}) avant de partir`);
       if (!confirm('Quitter cette escapade ?')) return;
-      await store.update(state.code, { [`members.${state.me.id}`]: null, [`avail.${state.me.id}`]: null }).catch(() => {});
+      await store.update(state.code, { [`members.${state.me.id}`]: null, [`avail.${state.me.id}`]: null, [`ghosts.${state.me.id}`]: state.me.name }).catch(() => {});
       state.myTrips = state.myTrips.filter((c) => c !== state.code); saveMyTrips();
       watchAll.subs?.[state.code]?.(); delete watchAll.subs?.[state.code]; delete state.cache[state.code];
       goHome(); toast('Tu as quitté l’escapade'); break;

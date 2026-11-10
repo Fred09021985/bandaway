@@ -46,8 +46,8 @@ jobs:
         run: |
           npx cap add android
           npx capacitor-assets generate --android \
-            --iconBackgroundColor '#07070f' --iconBackgroundColorDark '#07070f' \
-            --splashBackgroundColor '#07070f' --splashBackgroundColorDark '#07070f'
+            --iconBackgroundColor '#040b18' --iconBackgroundColorDark '#040b18' \
+            --splashBackgroundColor '#040b18' --splashBackgroundColorDark '#040b18'
           npx cap sync android
 
       - name: Compiler l'APK
@@ -68,6 +68,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
-          name: Bandaway ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
-          body: APK Android de Bandaway — télécharge `Bandaway.apk` et installe-le (autorise les sources inconnues).
+          name: Mes Cons ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
+          body: APK Android de Mes Cons — télécharge `Bandaway.apk` et installe-le (autorise les sources inconnues).
           files: dist/Bandaway.apk
