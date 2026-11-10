@@ -294,7 +294,7 @@ function viewStays(t) {
         <div class="stay-thumb ${src.k}">${src.ic}${i === 0 && votes.length ? '<span class="rank">1</span>' : ''}</div>
         <div class="stay-info">
           <h3>${esc(l.title)}</h3>
-          <div class="src">${src.label} · proposé par ${esc(by?.name || '?')}</div>
+          <div class="src">${src.label} · proposé par ${esc(by?.name || '?')}${l.editedAt ? ' · modifié' : ''}</div>
           ${l.price ? `<div class="prices">
             <span class="chip">${l.price} € ${l.priceType === 'night' ? '/ nuit' : 'total'}</span>
             ${total ? `<span class="chip neon">≈ ${Math.round(total / n)} € / pers.</span>` : ''}
@@ -308,6 +308,7 @@ function viewStays(t) {
           <span class="avatars">${votes.slice(0, 4).map((id) => avatar(t.members?.[id], 'sm')).join('')}</span>
         </div>
         <div class="row" style="gap:6px">
+          <button class="icon-btn" data-act="edit-link" data-id="${l.id}" aria-label="Modifier" style="width:38px;height:38px">${I.edit}</button>
           ${l.by === state.me.id ? `<button class="icon-btn" data-act="del-link" data-id="${l.id}" aria-label="Supprimer" style="width:38px;height:38px">${I.trash}</button>` : ''}
           <a class="btn btn-ghost btn-sm" href="${esc(l.url)}" target="_blank" rel="noopener">Voir ${I.ext.replace('<svg', '<svg width="15" height="15"')}</a>
         </div>
@@ -540,6 +541,37 @@ function sheetTrip(existing) {
   });
 }
 
+/* Rejoindre une escapade par son code (formulaire ou lien d'invitation) */
+async function joinByCode(code) {
+  code = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) { toast('Le code fait 6 caractères'); return false; }
+  if (state.myTrips.includes(code)) { closeSheet(); openTrip(code); return true; }
+  try {
+    const t = await store.get(code);
+    if (!t) { toast(store.mode === 'local' ? 'Code introuvable sur ce téléphone (mode local)' : 'Code introuvable'); return false; }
+    await store.update(code, { [`members.${state.me.id}`]: { name: state.me.name, color: state.me.color } });
+    state.myTrips.unshift(code); saveMyTrips();
+    closeSheet(); openTrip(code); toast(`Bienvenue dans « ${t.name} » 🙌`);
+    return true;
+  } catch (e) { console.error(e); toast('Erreur : ' + e.message); return false; }
+}
+
+/* Lien d'invitation : https://…/join.html?c=CODE (page web) ou mescons://join?c=CODE (ouvre l'app) */
+const INVITE_PAGE = 'https://fred09021985.github.io/bandaway/join.html';
+function inviteUrl(t) {
+  const q = new URLSearchParams({ c: t.code, t: t.name.slice(0, 40), i: state.me.name.slice(0, 20) });
+  return `${INVITE_PAGE}?${q.toString()}`;
+}
+function codeFromUrl(url) {
+  try { const c = new URL(url).searchParams.get('c'); return c && /^[A-Za-z0-9]{6}$/.test(c) ? c.toUpperCase() : null; } catch { return null; }
+}
+async function handleInvite(url) {
+  const code = codeFromUrl(url);
+  if (!code) return;
+  if (!state.me || !store) { local.set('bw:pending', code); return; }
+  await joinByCode(code);
+}
+
 function sheetJoin() {
   openSheet(`
     <h2>Rejoindre la bande</h2>
@@ -548,43 +580,41 @@ function sheetJoin() {
       <input class="input code-input" id="j-code" maxlength="6" placeholder="••••••" autocomplete="off" autocapitalize="characters">
       <button class="btn btn-primary btn-block" id="j-go">Rejoindre</button>
     </div>`, (root) => {
-    $('#j-go', root).onclick = async () => {
-      const code = $('#j-code').value.trim().toUpperCase();
-      if (code.length !== 6) return toast('Le code fait 6 caractères');
-      try {
-        const t = await store.get(code);
-        if (!t) return toast(store.mode === 'local' ? 'Code introuvable sur ce téléphone (mode local)' : 'Code introuvable');
-        await store.update(code, { [`members.${state.me.id}`]: { name: state.me.name, color: state.me.color } });
-        if (!state.myTrips.includes(code)) { state.myTrips.unshift(code); saveMyTrips(); }
-        closeSheet(); openTrip(code); toast(`Bienvenue dans « ${t.name} » 🙌`);
-      } catch (e) { console.error(e); toast('Erreur : ' + e.message); }
-    };
+    $('#j-go', root).onclick = () => joinByCode($('#j-code').value.trim().replace(/.*[?&]c=([A-Za-z0-9]{6}).*/, '$1'));
   });
 }
 
-function sheetLink() {
-  let type = 'night';
+function sheetLink(existing) {
+  const e = existing || {};
+  let type = e.priceType || 'night';
   openSheet(`
-    <h2>Proposer un logement</h2>
-    <p class="lead">Colle le lien de l’annonce (Airbnb, Booking, Abritel…).</p>
+    <h2>${existing ? 'Modifier le logement' : 'Proposer un logement'}</h2>
+    <p class="lead">${existing ? 'Change le lien, le prix ou la note. Les votes sont conservés.' : 'Colle le lien de l’annonce (Airbnb, Booking, Abritel…).'}</p>
     <div class="stack">
-      <div class="field"><label>Lien</label><input class="input" id="l-url" inputmode="url" placeholder="https://www.airbnb.fr/rooms/…"></div>
-      <div class="field"><label>Titre (optionnel)</label><input class="input" id="l-title" maxlength="70" placeholder="Villa vue mer avec piscine"></div>
+      <div class="field"><label>Lien</label><input class="input" id="l-url" inputmode="url" placeholder="https://www.airbnb.fr/rooms/…" value="${esc(e.url || '')}"></div>
+      <div class="field"><label>Titre (optionnel)</label><input class="input" id="l-title" maxlength="70" placeholder="Villa vue mer avec piscine" value="${esc(e.title || '')}"></div>
       <div class="field"><label>Prix (optionnel)</label>
-        <div class="grid-2"><input class="input" id="l-price" type="number" inputmode="decimal" min="0" placeholder="120 €">
-        <div class="mode-switch" style="height:52px;border-radius:16px"><button class="on" data-t="night" style="height:42px">/ nuit</button><button data-t="total" style="height:42px">Total</button></div></div></div>
-      <div class="field"><label>Note pour la bande</label><textarea class="input" id="l-note" maxlength="200" placeholder="4 chambres, jacuzzi, 10 min de la plage 🔥"></textarea></div>
-      <button class="btn btn-primary btn-block" id="l-go">Ajouter</button>
+        <div class="grid-2"><input class="input" id="l-price" type="number" inputmode="decimal" min="0" placeholder="120 €" value="${e.price || ''}">
+        <div class="mode-switch" style="height:52px;border-radius:16px"><button class="${type === 'night' ? 'on' : ''}" data-t="night" style="height:42px">/ nuit</button><button class="${type === 'total' ? 'on' : ''}" data-t="total" style="height:42px">Total</button></div></div></div>
+      <div class="field"><label>Note pour la bande</label><textarea class="input" id="l-note" maxlength="200" placeholder="4 chambres, jacuzzi, 10 min de la plage 🔥">${esc(e.note || '')}</textarea></div>
+      <button class="btn btn-primary btn-block" id="l-go">${existing ? 'Enregistrer' : 'Ajouter'}</button>
     </div>`, (root) => {
     root.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { type = b.dataset.t; root.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); });
     $('#l-url', root).addEventListener('blur', () => { const u = $('#l-url').value.trim(); if (u && !$('#l-title').value) $('#l-title').placeholder = guessTitle(normUrl(u)); });
     $('#l-go', root).onclick = async () => {
       const url = normUrl($('#l-url').value.trim());
       try { new URL(url); } catch { return toast('Lien invalide'); }
-      const id = uid();
-      const link = { id, url, title: $('#l-title').value.trim() || guessTitle(url), price: Number($('#l-price').value) || 0, priceType: type, note: $('#l-note').value.trim(), by: state.me.id, at: Date.now(), votes: { [state.me.id]: 1 } };
-      await store.update(state.code, { [`links.${id}`]: link });
-      closeSheet(); toast('Logement ajouté 🏡');
+      const fields = { url, title: $('#l-title').value.trim() || guessTitle(url), price: Number($('#l-price').value) || 0, priceType: type, note: $('#l-note').value.trim() };
+      if (existing) {
+        const patch = { [`links.${e.id}.editedAt`]: Date.now(), [`links.${e.id}.editedBy`]: state.me.id };
+        for (const [k, v] of Object.entries(fields)) patch[`links.${e.id}.${k}`] = v;
+        await store.update(state.code, patch);
+        closeSheet(); toast('Logement modifié ✏️');
+      } else {
+        const id = uid();
+        await store.update(state.code, { [`links.${id}`]: { id, ...fields, by: state.me.id, at: Date.now(), votes: { [state.me.id]: 1 } } });
+        closeSheet(); toast('Logement ajouté 🏡');
+      }
     };
   });
 }
@@ -635,7 +665,8 @@ function goHome() { state.screen = 'home'; state.code = null; state.trip = null;
 
 async function shareTrip() {
   const t = state.trip;
-  const text = `🌍 Rejoins « ${t.name} » sur Mes Cons !\nCode : ${t.code}\nDispos, logements et dépenses au même endroit 🔴🔵`;
+  const url = inviteUrl(t);
+  const text = `🌍 ${state.me.name} t'invite à rejoindre « ${t.name} » sur Mes Cons !\n👉 ${url}\n(code : ${t.code})`;
   const Share = window.Capacitor?.Plugins?.Share;
   try {
     if (Share) return await Share.share({ title: 'Mes Cons', text, dialogTitle: 'Inviter la bande' });
@@ -653,7 +684,9 @@ document.addEventListener('click', async (e) => {
     case 'pick-color': state._color = +el.dataset.i; const v = $('#ob-name')?.value; render(); if (v) $('#ob-name').value = v; break;
     case 'onboard': {
       const name = $('#ob-name').value.trim(); if (!name) return toast('Choisis un pseudo');
-      state.me = { id: uid(), name, color: state._color ?? 0 }; local.set('bw:me', state.me); render(); break;
+      state.me = { id: uid(), name, color: state._color ?? 0 }; local.set('bw:me', state.me); render();
+      const pending = local.get('bw:pending'); if (pending) { local.del('bw:pending'); joinByCode(pending); }
+      break;
     }
     case 'new': sheetTrip(); break;
     case 'join': sheetJoin(); break;
@@ -666,6 +699,7 @@ document.addEventListener('click', async (e) => {
     case 'cal-mode': state.calMode = el.dataset.m; renderKeepScroll(); break;
     case 'share': shareTrip(); break;
     case 'add-link': sheetLink(); break;
+    case 'edit-link': { const l = t.links?.[el.dataset.id]; if (l) sheetLink(l); break; }
     case 'add-exp': sheetExpense(); break;
     case 'settle': {
       const from = el.dataset.from, to = el.dataset.to, amount = +el.dataset.amt;
@@ -782,8 +816,12 @@ async function checkLiveUpdate() {
   render();
   watchAll();
   setTimeout(checkLiveUpdate, 1500);
-  // Bouton retour Android
   const App = window.Capacitor?.Plugins?.App;
+  // Ouverture via un lien d'invitation (mescons://join?c=CODE)
+  App?.addListener?.('appUrlOpen', (ev) => handleInvite(ev.url));
+  try { const l = await App?.getLaunchUrl?.(); if (l?.url) await handleInvite(l.url); } catch {}
+  const pending = state.me && local.get('bw:pending'); if (pending) { local.del('bw:pending'); joinByCode(pending); }
+  // Bouton retour Android
   App?.addListener?.('backButton', () => {
     if ($('#sheet-root').innerHTML) closeSheet();
     else if (state.screen === 'trip') goHome();

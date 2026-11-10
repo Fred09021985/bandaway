@@ -56,6 +56,23 @@ jobs:
             --iconBackgroundColor '#040b18' --iconBackgroundColorDark '#040b18' \
             --splashBackgroundColor '#040b18' --splashBackgroundColorDark '#040b18'
           npx cap sync android
+          # Liens d'invitation : mescons://join?c=CODE ouvre l'app
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p).read()
+          f = '''
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="mescons" android:host="join" />
+                      </intent-filter>
+          '''
+          if 'android:scheme="mescons"' not in s:
+              s = s.replace('</activity>', f + '        </activity>', 1)
+          open(p, 'w').write(s)
+          PY
+          grep -n "mescons" android/app/src/main/AndroidManifest.xml
 
       - name: Compiler l'APK
         working-directory: android
