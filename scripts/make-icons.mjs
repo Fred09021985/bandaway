@@ -22,4 +22,9 @@ const splash = `<rect width="2732" height="2732" fill="#040b18"/>
 <svg x="1116" y="1116" width="500" height="500" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="300" fill="url(#kit)"/>${mark(13, 200, 200)}</svg>`;
 await sharp(svg(2732, 2732, splash)).png().toFile('assets/splash.png');
 await sharp(svg(2732, 2732, splash)).png().toFile('assets/splash-dark.png');
+// Icônes de la version web (iPhone / navigateur)
+import { mkdirSync } from 'node:fs';
+mkdirSync('www/icons', { recursive: true });
+const full = svg(1024, 1024, `${bg(1024)}${mark(13, 200, 200)}`);
+for (const [n, sz] of [['apple-touch-icon', 180], ['icon-192', 192], ['icon-512', 512]]) await sharp(full).resize(sz, sz).png().toFile(`www/icons/${n}.png`);
 console.log('ok');

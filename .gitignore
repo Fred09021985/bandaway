@@ -4,5 +4,6 @@ dist/
 .DS_Store
 www/vendor/
 www/fonts/
+www/icons/
 assets/
 package-lock.json

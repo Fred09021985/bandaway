@@ -856,6 +856,16 @@ async function checkLiveUpdate() {
   }
 }
 
+/* Version web sur iPhone : explique comment l'ajouter à l'écran d'accueil (une fois par semaine max) */
+function iosInstallHint() {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (!ios || standalone || Date.now() - (local.get('bw:a2hs') || 0) < 7 * 864e5) return;
+  const bar = updateBar(`<span>📲 Installe l’app : <b>Partager</b> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8"/></svg> puis <b>Sur l’écran d’accueil</b></span><button id="upd-later" aria-label="Fermer">✕</button>`);
+  bar.classList.add('wrap');
+  $('#upd-later').onclick = () => { local.set('bw:a2hs', Date.now()); bar.classList.remove('show'); };
+}
+
 /* ═════════════════ Démarrage ═════════════════ */
 (async function boot() {
   // Confirme au module de mise à jour que cette version démarre bien (sinon retour automatique à la précédente)
@@ -870,6 +880,11 @@ async function checkLiveUpdate() {
   App?.addListener?.('appUrlOpen', (ev) => handleInvite(ev.url));
   try { const l = await App?.getLaunchUrl?.(); if (l?.url) await handleInvite(l.url); } catch {}
   const pending = state.me && local.get('bw:pending'); if (pending) { local.del('bw:pending'); joinByCode(pending); }
+  // Version web (iPhone) : invitation reçue dans l'adresse (?c=CODE), puis bandeau d'installation
+  if (!window.Capacitor?.isNativePlatform?.()) {
+    if (codeFromUrl(location.href)) { await handleInvite(location.href); history.replaceState(null, '', location.pathname); }
+    setTimeout(iosInstallHint, 2500);
+  }
   // Bouton retour Android
   App?.addListener?.('backButton', () => {
     if ($('#sheet-root').innerHTML) closeSheet();

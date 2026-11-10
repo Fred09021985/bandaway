@@ -300,3 +300,5 @@ input[type=date].input { color-scheme: dark; }
 .fb-type { height: 64px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 13px; color: var(--muted); }
 .fb-type span { font-size: 22px; }
 .fb-type.on { color: var(--text); border-color: var(--cyan); background: rgba(77,141,255,.16); box-shadow: 0 0 14px -5px var(--cyan); }
+
+#update-bar.wrap { white-space: normal; line-height: 1.4; width: max-content; }

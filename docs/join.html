@@ -62,8 +62,16 @@
       </ol>
     </div>
   </div>
-  <div id="other" class="card hidden">
-    <p style="margin:0">Mes Cons est une app <b>Android</b>. Ouvre ce lien depuis un téléphone Android pour rejoindre l'escapade.</p>
+  <div id="other" class="hidden">
+    <a class="btn primary" id="web" href="app/">🚀 Ouvrir Mes Cons</a>
+    <div class="card" style="text-align:left">
+      <div class="label" style="margin-bottom:8px" id="ios-title">Sur iPhone</div>
+      <ol class="steps" id="ios-steps">
+        <li>Ouvre ce lien dans <b>Safari</b> et touche <b>Ouvrir Mes Cons</b>.</li>
+        <li>Touche <b>Partager</b> <span aria-hidden="true">⬆️</span> puis <b>Sur l'écran d'accueil</b> : l'app s'installe avec son icône.</li>
+        <li>Lance Mes Cons depuis l'écran d'accueil, choisis ton pseudo, puis <b>Rejoindre</b> et colle le code.</li>
+      </ol>
+    </div>
   </div>
   <p class="note">🔴🔵 Mes Cons — les escapades entre potes</p>
 </main>
@@ -83,6 +91,11 @@
 
   const isAndroid = /android/i.test(navigator.userAgent);
   if (!isAndroid) { $('android').classList.add('hidden'); $('other').classList.remove('hidden'); }
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isAndroid && !isIOS) { $('ios-title').textContent = 'Sur ordinateur'; $('ios-steps').innerHTML = '<li>Touche <b>Ouvrir Mes Cons</b> : l’app s’ouvre dans ton navigateur et rejoint l’escapade.</li><li>Sur Android, ouvre plutôt ce lien depuis ton téléphone pour installer l’app.</li>'; }
+  // Version web : l'invitation est transmise à l'app (?c=CODE) ; le code est aussi copié pour l'app installée
+  $('web').href = code.length === 6 ? `app/?c=${code}` : 'app/';
+  $('web').addEventListener('click', () => { try { navigator.clipboard.writeText(code); } catch {} });
   // Lien qui ouvre l'app si elle est installée ; sinon Android revient sur cette page avec ?noapp=1
   const back = new URL(location.href); back.searchParams.set('noapp', '1');
   $('open').href = `intent://join?c=${code}#Intent;scheme=mescons;package=app.bandaway.trips;S.browser_fallback_url=${encodeURIComponent(back.toString())};end`;

@@ -35,6 +35,18 @@ Chaque `git push` sur `main` recompile une nouvelle version.
 
 ---
 
+## 🍏 iPhone (version web installable)
+
+Mes Cons tourne aussi sur iPhone, sans App Store : **https://fred09021985.github.io/bandaway/app/**
+
+1. Ouvre le lien dans **Safari**.
+2. Touche **Partager** ⬆️ puis **Sur l'écran d'accueil** → l'icône Mes Cons apparaît, l'app s'ouvre en plein écran.
+3. Mêmes données (Firestore) que la version Android : Android et iPhone partagent les mêmes escapades.
+
+À chaque push sur `main`, GitHub Actions recopie l'app dans `docs/app` : les iPhone ont la nouvelle version au prochain lancement. Les liens d'invitation détectent l'iPhone et proposent la version web.
+
+---
+
 ## 🔄 Mises à jour automatiques (sans réinstaller)
 
 L'app intègre [Capgo](https://github.com/Cap-go/capacitor-updater) en mode **auto-hébergé** (aucun compte, aucun serveur tiers) :
