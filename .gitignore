@@ -1,0 +1,8 @@
+node_modules/
+android/
+dist/
+.DS_Store
+www/vendor/
+www/fonts/
+assets/
+package-lock.json

@@ -1,0 +1,7 @@
+{
+  "appId": "app.bandaway.trips",
+  "appName": "Bandaway",
+  "webDir": "www",
+  "backgroundColor": "#07070f",
+  "android": { "backgroundColor": "#07070f" }
+}
