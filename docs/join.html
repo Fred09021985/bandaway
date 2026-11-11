@@ -3,43 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#040b18">
+<meta name="theme-color" content="#0a0614">
 <title>Invitation · Tripizi</title>
-<meta property="og:title" content="Tu es invité(e) sur Tripizi 🔴🔵">
+<meta property="og:title" content="Tu es invité(e) sur Tripizi">
 <meta property="og:description" content="Dispos, logements et dépenses de l'escapade, au même endroit.">
 <style>
-  :root { --bg:#040b18; --text:#f3f6ff; --muted:#9aa8c9; --line:rgba(160,190,255,.14); --red:#da291c; --navy:#0a2f6e; --blue:#4d8dff;
-    --kit:linear-gradient(90deg,#0a2f6e 0 35%,#fff 35% 38%,#da291c 38% 62%,#fff 62% 65%,#0a2f6e 65%);
-    --grad:linear-gradient(120deg,#1f5fd1 0%,#0a2f6e 46%,#da291c 100%); }
+  :root { --bg:#0a0614; --text:#f6f1ff; --muted:#aa9dcb; --line:rgba(195,165,255,.14); --red:#ff2e97; --navy:#3a1479; --blue:#b28cff;
+    --kit:linear-gradient(90deg,#3a1479 0 35%,#fff 35% 38%,#ff2e97 38% 62%,#fff 62% 65%,#3a1479 65%);
+    --grad:linear-gradient(120deg,#9a5cff 0%,#6a1fe0 46%,#ff2e97 100%); }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; min-height:100%; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
   body { display:flex; justify-content:center; padding:max(env(safe-area-inset-top),28px) 18px 32px; overflow-x:hidden; }
-  .glow { position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(60vmax 60vmax at 0% 0%,rgba(13,71,184,.35),transparent 60%),radial-gradient(50vmax 50vmax at 100% 100%,rgba(218,41,28,.22),transparent 60%); }
+  .glow { position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(60vmax 60vmax at 0% 0%,rgba(98,36,214,.35),transparent 60%),radial-gradient(50vmax 50vmax at 100% 100%,rgba(255,46,151,.22),transparent 60%); }
   main { position:relative; z-index:1; width:100%; max-width:420px; text-align:center; }
-  .logo { width:84px; height:84px; margin:10px auto 18px; border-radius:26px; background:var(--kit); display:grid; place-items:center; box-shadow:0 18px 50px -12px rgba(218,41,28,.7),0 0 0 1px rgba(255,255,255,.25) inset; }
+  .logo { width:84px; height:84px; margin:10px auto 18px; border-radius:26px; background:var(--kit); display:grid; place-items:center; box-shadow:0 18px 50px -12px rgba(255,46,151,.7),0 0 0 1px rgba(255,255,255,.25) inset; }
   .logo svg { width:48px; height:48px; }
   .brand { font-weight:800; font-size:15px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
   h1 { font-size:26px; line-height:1.2; margin:14px 0 6px; letter-spacing:-.02em; }
   h1 b { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
   p { color:var(--muted); line-height:1.5; margin:0 0 18px; }
-  .card { background:rgba(140,170,255,.06); border:1px solid var(--line); border-radius:22px; padding:18px; margin:18px 0; }
+  .card { background:rgba(195,165,255,.06); border:1px solid var(--line); border-radius:22px; padding:18px; margin:18px 0; }
   .label { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
   .code { font-size:40px; font-weight:800; letter-spacing:.22em; margin:8px 0 2px; padding-left:.22em; }
   .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:54px; border-radius:16px; border:0; font:inherit; font-weight:700; font-size:16px; text-decoration:none; cursor:pointer; margin-top:10px; }
-  .primary { background:var(--grad); color:#fff; box-shadow:0 12px 30px -10px rgba(218,41,28,.8); }
-  .ghost { background:rgba(140,170,255,.10); color:var(--text); border:1px solid var(--line); }
+  .primary { background:var(--grad); color:#fff; box-shadow:0 12px 30px -10px rgba(255,46,151,.8); }
+  .ghost { background:rgba(195,165,255,.10); color:var(--text); border:1px solid var(--line); }
   .steps { text-align:left; font-size:14px; color:var(--muted); line-height:1.6; margin:0; padding-left:20px; }
   .steps b { color:var(--text); }
   .note { font-size:12.5px; color:var(--muted); margin-top:14px; }
   .hidden { display:none !important; }
-  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#12203d; border:1px solid var(--line); padding:10px 16px; border-radius:12px; font-size:14px; opacity:0; transition:opacity .25s; }
+  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#150b29; border:1px solid var(--line); padding:10px 16px; border-radius:12px; font-size:14px; opacity:0; transition:opacity .25s; }
   #toast.show { opacity:1; }
 </style>
 </head>
 <body>
 <div class="glow"></div>
 <main>
-  <div class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#0a2f6e" opacity=".55"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></svg></div>
+  <div class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#3a1479" opacity=".55"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></svg></div>
   <div class="brand">Tripizi</div>
   <h1 id="title">Tu es invité(e) dans <b>une escapade</b></h1>
   <p id="sub">Dispos, logements et dépenses de la bande, au même endroit.</p>
@@ -73,7 +73,7 @@
       </ol>
     </div>
   </div>
-  <p class="note">🔴🔵 Tripizi — les escapades entre potes</p>
+  <p class="note">💜 Tripizi — les escapades entre potes</p>
 </main>
 <div id="toast"></div>
 <script>

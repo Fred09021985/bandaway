@@ -2,9 +2,9 @@
   "appId": "app.bandaway.trips",
   "appName": "Tripizi",
   "webDir": "www",
-  "backgroundColor": "#040b18",
+  "backgroundColor": "#0a0614",
   "android": {
-    "backgroundColor": "#040b18"
+    "backgroundColor": "#0a0614"
   },
   "plugins": {
     "CapacitorUpdater": {

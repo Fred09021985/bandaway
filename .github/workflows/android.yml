@@ -54,8 +54,8 @@ jobs:
         run: |
           npx cap add android
           npx capacitor-assets generate --android \
-            --iconBackgroundColor '#040b18' --iconBackgroundColorDark '#040b18' \
-            --splashBackgroundColor '#040b18' --splashBackgroundColorDark '#040b18'
+            --iconBackgroundColor '#0a0614' --iconBackgroundColorDark '#0a0614' \
+            --splashBackgroundColor '#0a0614' --splashBackgroundColorDark '#0a0614'
           npx cap sync android
           # Liens d'invitation : mescons://join?c=CODE ouvre l'app
           python3 - <<'PY'

@@ -17,9 +17,9 @@ const fmt = (k, o = { day: 'numeric', month: 'short' }) => fromKey(k).toLocaleDa
 const fmtRange = (a, b) => a === b ? fmt(a, { weekday: 'short', day: 'numeric', month: 'short' }) : `${fmt(a, { weekday: 'short', day: 'numeric' })} → ${fmt(b, { weekday: 'short', day: 'numeric', month: 'short' })}`;
 const periodDays = (t) => { const out = []; let d = fromKey(t.start); const end = fromKey(t.end); while (d <= end && out.length < 200) { out.push(toKey(d)); d = addDays(d, 1); } return out; };
 
-const AVATAR_COLORS = [['#3a7bff', '#0a2f6e'], ['#ff3b2f', '#9b1208'], ['#9fb7e6', '#3d5a96'], ['#ff3b2f', '#1f5fd1'], ['#5cc8ff', '#1f5fd1'], ['#ff7a5c', '#da291c'], ['#c9a227', '#7a5c00'], ['#7aa7ff', '#da291c']];
-const KIT = 'linear-gradient(90deg,#0a2f6e 0 35%,#fff 35% 38%,#da291c 38% 62%,#fff 62% 65%,#0a2f6e 65%)';
-const COVERS = [KIT, 'linear-gradient(135deg,#1f5fd1,#0a2f6e)', 'linear-gradient(135deg,#da291c,#0a2f6e)', 'linear-gradient(135deg,#0a2f6e,#1f5fd1 60%,#da291c)', 'linear-gradient(135deg,#ff3b2f,#9b1208)', 'linear-gradient(160deg,#0a2f6e 0 55%,#da291c 55%)'];
+const AVATAR_COLORS = [['#7b2ff7', '#3a1479'], ['#ff2e97', '#a3105c'], ['#cdb4ff', '#4b1d96'], ['#ff2e97', '#7b2ff7'], ['#cdb4ff', '#7b2ff7'], ['#ff6cb6', '#ff2e97'], ['#c9a227', '#7a5c00'], ['#cdb4ff', '#ff2e97']];
+const KIT = 'linear-gradient(90deg,#3a1479 0 35%,#fff 35% 38%,#ff2e97 38% 62%,#fff 62% 65%,#3a1479 65%)';
+const COVERS = [KIT, 'linear-gradient(135deg,#7b2ff7,#3a1479)', 'linear-gradient(135deg,#ff2e97,#3a1479)', 'linear-gradient(135deg,#3a1479,#7b2ff7 60%,#ff2e97)', 'linear-gradient(135deg,#ff2e97,#a3105c)', 'linear-gradient(160deg,#3a1479 0 55%,#ff2e97 55%)'];
 const EMOJIS = ['🏖️', '🏔️', '🏕️', '🌴', '🏙️', '🍷', '🎿', '🚐', '🏝️', '🎉', '🌋', '🏄', '🛶', '🗼', '🌲', '🍕'];
 
 const initials = (n = '?') => n.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -29,7 +29,7 @@ const avatar = (m, cls = '') => {
 };
 
 const I = {
-  logo: '<svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#0a2f6e" opacity=".55"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></svg>',
+  logo: '<svg viewBox="0 0 48 48" fill="none"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><path d="m17 17 4 6.5-4 3-3.5-3z" fill="#3a1479" opacity=".55"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></svg>',
   euro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6.5A7 7 0 1 0 18 17.5"/><path d="M4 10h10M4 14h10"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
@@ -240,14 +240,17 @@ function viewDates(t) {
         const s = mine[k] || '';
         cells.push(`<button class="day ${s}${bd}" data-act="day" data-k="${k}">${fromKey(k).getDate()}<span class="heat"><i style="width:${ratio * 100}%"></i></span></button>`);
       } else {
-        const bg = ratio === 0 ? '' : `background:rgba(182,255,59,${0.08 + ratio * 0.82});${ratio > .55 ? 'color:#04101f;border-color:transparent;' : ''}`;
+        const bg = ratio === 0 ? '' : `background:rgba(182,255,59,${0.08 + ratio * 0.82});${ratio > .55 ? 'color:#0d081c;border-color:transparent;' : ''}`;
         cells.push(`<button class="day${bd}" style="${bg}" data-act="day-info" data-k="${k}">${fromKey(k).getDate()}<span class="cnt" ${ratio > .55 ? 'style="color:#04101fcc"' : ''}>${yes}${maybe ? `+${maybe}` : ''}/${n}</span></button>`);
       }
     }
     return `<div class="month-label">${m.label}</div><div class="wk">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => `<div class="h">${d}</div>`).join('')}${cells.join('')}</div>`;
   }).join('');
 
-  const ranked = days.map((k) => ({ k, ...dayScore(t, k) })).filter((x) => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 6);
+  // Tous les jours où au moins un pote est dispo, du plus demandé au moins demandé (à égalité : ordre chronologique)
+  const rankedAll = days.map((k, i) => ({ k, i, ...dayScore(t, k) })).filter((x) => x.score > 0).sort((a, b) => b.score - a.score || a.i - b.i);
+  const TOP = 7;
+  const ranked = state.allDays ? rankedAll : rankedAll.slice(0, TOP);
 
   return `
     ${best ? `<div class="glass best">
@@ -275,7 +278,7 @@ function viewDates(t) {
     <div class="glass people-day">${ranked.map((r) => {
       const who = Object.entries(t.members).filter(([id]) => t.avail?.[id]?.[r.k] === 'yes').map(([, m]) => m);
       return `<div class="pd-row"><span class="d">${fmt(r.k, { weekday: 'short', day: 'numeric', month: 'short' })}</span><span class="bar"><i style="width:${(r.score / n) * 100}%"></i></span><span class="avatars">${who.slice(0, 4).map((m) => avatar(m, 'sm')).join('')}</span></div>`;
-    }).join('')}</div>` : ''}`;
+    }).join('')}${rankedAll.length > TOP ? `<button class="btn btn-ghost btn-sm" data-act="all-days" style="width:100%;margin-top:10px">${state.allDays ? 'Voir moins' : `Voir les ${rankedAll.length} jours`}</button>` : ''}</div>` : ''}`;
 }
 
 function viewStays(t) {
@@ -768,12 +771,13 @@ document.addEventListener('click', async (e) => {
       toast(`${fmt(k, { weekday: 'short', day: 'numeric' })} · ✅ ${groups.yes.join(', ') || '—'}${groups.maybe.length ? ` · 🤔 ${groups.maybe.join(', ')}` : ''}`);
       break;
     }
+    case 'all-days': state.allDays = !state.allDays; renderKeepScroll(); break;
     case 'quick': {
       const q = el.dataset.q, patch = {};
       for (const k of periodDays(t)) {
         const dow = fromKey(k).getDay();
         if (q === 'all') patch[`avail.${state.me.id}.${k}`] = 'yes';
-        else if (q === 'we' && (dow === 0 || dow === 6 || dow === 5)) patch[`avail.${state.me.id}.${k}`] = 'yes';
+        else if (q === 'we' && (dow === 0 || dow === 6)) patch[`avail.${state.me.id}.${k}`] = 'yes';
       }
       if (q === 'clear') await store.update(state.code, { [`avail.${state.me.id}`]: {} });
       else await store.update(state.code, patch);
