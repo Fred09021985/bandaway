@@ -133,7 +133,7 @@ function viewOnboarding() {
   return `<section class="screen">
     <div class="hero-logo">
       <div class="logo-mark">${I.logo}</div>
-      <div class="brand"><span class="grad-text">Mes Cons</span></div>
+      <div class="brand"><span class="grad-text">Tripizi</span></div>
       <p class="tagline">Les escapades entre potes, sans le chaos du groupe WhatsApp.</p>
     </div>
     <div class="glass stack" style="padding:20px">
@@ -168,7 +168,7 @@ function viewHome() {
   const codes = state.myTrips.filter((c) => state.cache[c]);
   return `<section class="screen">
     <div class="topbar">
-      <div class="mini-brand"><span class="mk">${I.logo}</span>Mes Cons</div>
+      <div class="mini-brand"><span class="mk">${I.logo}</span>Tripizi</div>
       <button data-act="edit-me">${avatar(state.me)}</button>
     </div>
     <div class="greet"><span class="eyebrow">Salut ${esc(state.me.name)} 👋</span><h1>Où part<br><span class="grad-text">la bande</span> ?</h1></div>
@@ -178,7 +178,7 @@ function viewHome() {
     </div>
     <div class="section-h"><span class="eyebrow">Mes escapades</span><span class="chip">${codes.length}</span></div>
     ${codes.length ? codes.map(tripCard).join('') : `<div class="glass empty"><div class="big">🧭</div><h3>Aucune escapade pour l'instant</h3><p>Crée ton premier voyage et partage le code à ta bande.</p></div>`}
-    <button class="glass feedback-cta" data-act="feedback"><span class="ic">💬</span><span><b>Une idée pour améliorer Mes Cons ?</b><small>Propose une amélioration ou signale un bug</small></span><span class="go">›</span></button>
+    <button class="glass feedback-cta" data-act="feedback"><span class="ic">💬</span><span><b>Une idée pour améliorer Tripizi ?</b><small>Propose une amélioration ou signale un bug</small></span><span class="go">›</span></button>
     ${store.mode === 'local' ? `<div class="glass mode-banner">⚡<span><b>Mode démo local.</b> Les données restent sur ce téléphone. Ajoute ta config Firebase (voir README) pour synchroniser avec tes amis en temps réel.</span></div>` : ''}
   </section>`;
 }
@@ -255,7 +255,7 @@ function viewDates(t) {
       <div class="big">${fmtRange(best.start, best.end)}</div>
       <div class="sub">${best.len} jour${best.len > 1 ? 's' : ''} · ${Number.isInteger(best.avail) ? best.avail : best.avail.toFixed(1)} / ${best.total} potes dispos tout du long</div>
       <div class="meter"><i style="width:${(best.avail / best.total) * 100}%"></i></div>
-    </div>` : `<div class="glass best"><span class="eyebrow" style="color:var(--lime)">Meilleur créneau</span><div class="big">En attente des dispos…</div><div class="sub">Chacun coche ses jours, Mes Cons trouve le créneau idéal.</div></div>`}
+    </div>` : `<div class="glass best"><span class="eyebrow" style="color:var(--lime)">Meilleur créneau</span><div class="big">En attente des dispos…</div><div class="sub">Chacun coche ses jours, Tripizi trouve le créneau idéal.</div></div>`}
     <div class="glass cal">
       <div class="mode-switch">
         <button class="${state.calMode === 'mine' ? 'on' : ''}" data-act="cal-mode" data-m="mine">Mes dispos ${filled ? `(${filled})` : ''}</button>
@@ -400,7 +400,7 @@ function viewMoney(t) {
   const myBal = bal[me] || 0;
   const maxAbs = Math.max(1, ...Object.values(bal).map(Math.abs));
 
-  if (!exps.length) return `<div class="glass empty"><div class="big">💶</div><h3>Aucune dépense</h3><p>Ajoute les courses, le logement, l’essence…<br>Mes Cons calcule qui doit combien à qui.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-exp">${I.plus.replace('<svg', '<svg width="18" height="18"')}Ajouter une dépense</button></div>`;
+  if (!exps.length) return `<div class="glass empty"><div class="big">💶</div><h3>Aucune dépense</h3><p>Ajoute les courses, le logement, l’essence…<br>Tripizi calcule qui doit combien à qui.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-exp">${I.plus.replace('<svg', '<svg width="18" height="18"')}Ajouter une dépense</button></div>`;
 
   return `
   <div class="stats">
@@ -706,11 +706,11 @@ function goHome() { state.screen = 'home'; state.code = null; state.trip = null;
 async function shareTrip() {
   const t = state.trip;
   const url = inviteUrl(t);
-  const text = `🌍 ${state.me.name} t'invite à rejoindre « ${t.name} » sur Mes Cons !\n👉 ${url}\n(code : ${t.code})`;
+  const text = `🌍 ${state.me.name} t'invite à rejoindre « ${t.name} » sur Tripizi !\n👉 ${url}\n(code : ${t.code})`;
   const Share = window.Capacitor?.Plugins?.Share;
   try {
-    if (Share) return await Share.share({ title: 'Mes Cons', text, dialogTitle: 'Inviter la bande' });
-    if (navigator.share) return await navigator.share({ title: 'Mes Cons', text });
+    if (Share) return await Share.share({ title: 'Tripizi', text, dialogTitle: 'Inviter la bande' });
+    if (navigator.share) return await navigator.share({ title: 'Tripizi', text });
   } catch { return; }
   try { await navigator.clipboard.writeText(text); toast('Invitation copiée 📋'); } catch { toast(`Code : ${t.code}`); }
 }
