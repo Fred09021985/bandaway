@@ -65,7 +65,14 @@ function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200);
 }
-function saveMyTrips() { local.set('bw:mytrips', state.myTrips); }
+function saveMyTrips() { local.set('bw:mytrips', state.myTrips); syncDevice(); }
+
+/* Journal des nouveautés : lu par le notificateur (GitHub Actions) pour prévenir les autres potes.
+   key fixe par sujet (ex. « av_<uid> ») pour qu'une série de modifs ne produise qu'une notif. */
+function feed(key, type, text) {
+  const at = Date.now();
+  return { [`feed.${key}`]: { by: state.me.id, name: state.me.name, type, text: String(text).slice(0, 140), at }, feedAt: at };
+}
 
 /* ═════════════════ Logique métier ═════════════════ */
 function dayScore(trip, k) {
@@ -283,8 +290,8 @@ function viewDates(t) {
 
 function viewStays(t) {
   const n = Math.max(1, Object.keys(t.members || {}).length);
-  const best = bestWindow(t);
-  const nights = best ? Math.max(1, best.len - 1) : null;
+  // Nuits de l'escapade : du jour d'arrivée (début) au jour de départ (fin)
+  const nights = t.start && t.end ? Math.max(1, Math.round((fromKey(t.end) - fromKey(t.start)) / 864e5)) : 1;
   const links = Object.values(t.links || {}).sort((a, b) => Object.keys(b.votes || {}).length - Object.keys(a.votes || {}).length || a.at - b.at);
   if (!links.length) return `<div class="glass empty"><div class="big">🏡</div><h3>Aucun logement proposé</h3><p>Colle un lien Airbnb, Booking ou Abritel.<br>La bande vote, le meilleur remonte en tête.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-link">${I.plus.replace('<svg', '<svg width="18" height="18"')}Proposer un logement</button></div>`;
   return links.map((l, i) => {
@@ -292,7 +299,7 @@ function viewStays(t) {
     const votes = Object.keys(l.votes || {});
     const voted = votes.includes(state.me.id);
     const by = t.members?.[l.by];
-    const total = l.priceType === 'night' && nights ? l.price * nights : l.price;
+    const total = l.priceType === 'night' ? l.price * nights : l.price;
     return `<article class="glass stay">
       <div class="stay-top">
         <div class="stay-thumb ${src.k}">${src.ic}${i === 0 && votes.length ? '<span class="rank">1</span>' : ''}</div>
@@ -301,6 +308,7 @@ function viewStays(t) {
           <div class="src">${src.label} · proposé par ${esc(by?.name || '?')}${l.editedAt ? ' · modifié' : ''}</div>
           ${l.price ? `<div class="prices">
             <span class="chip">${l.price} € ${l.priceType === 'night' ? '/ nuit' : 'total'}</span>
+            ${l.priceType === 'night' ? `<span class="chip">${nights} nuit${nights > 1 ? 's' : ''} · ${Math.round(total)} €</span>` : ''}
             ${total ? `<span class="chip neon">≈ ${Math.round(total / n)} € / pers.</span>` : ''}
           </div>` : ''}
         </div>
@@ -487,7 +495,7 @@ function sheetExpense() {
       if (amount > 10000000) return toast('Montant trop élevé');
       if (!forIds.size) return toast('Coche au moins une personne');
       const id = uid();
-      await store.update(state.code, { [`expenses.${id}`]: { id, title, amount, cat, by: payer, for: [...forIds], at: Date.now(), createdBy: state.me.id } });
+      await store.update(state.code, { [`expenses.${id}`]: { id, title, amount, cat, by: payer, for: [...forIds], at: Date.now(), createdBy: state.me.id }, ...feed(`ex_${id}`, 'expense', `a ajouté une dépense : ${title} (${euro(amount)})`) });
       closeSheet(); toast(`Dépense ajoutée : ${euro(amount)} 💶`);
     };
   });
@@ -529,7 +537,7 @@ function sheetTrip(existing) {
       if (daysBetween(start, end) > 180) return toast('Période max : 6 mois');
       try {
         if (existing) {
-          await store.update(existing.code, { name, destination, emoji, start, end });
+          await store.update(existing.code, { name, destination, emoji, start, end, ...feed('trip', 'trip', `a modifié l’escapade (${fmt(start)} → ${fmt(end)})`) });
           toast('Escapade mise à jour ✨');
         } else {
           const code = makeCode();
@@ -553,7 +561,7 @@ async function joinByCode(code) {
   try {
     const t = await store.get(code);
     if (!t) { toast(store.mode === 'local' ? 'Code introuvable sur ce téléphone (mode local)' : 'Code introuvable'); return false; }
-    await store.update(code, { [`members.${state.me.id}`]: { name: state.me.name, color: state.me.color } });
+    await store.update(code, { [`members.${state.me.id}`]: { name: state.me.name, color: state.me.color }, ...feed(`jn_${state.me.id}`, 'join', 'a rejoint l’escapade 🙌') });
     state.myTrips.unshift(code); saveMyTrips();
     closeSheet(); openTrip(code); toast(`Bienvenue dans « ${t.name} » 🙌`);
     return true;
@@ -612,11 +620,12 @@ function sheetLink(existing) {
       if (existing) {
         const patch = { [`links.${e.id}.editedAt`]: Date.now(), [`links.${e.id}.editedBy`]: state.me.id };
         for (const [k, v] of Object.entries(fields)) patch[`links.${e.id}.${k}`] = v;
+        Object.assign(patch, feed(`lk_${e.id}`, 'link', `a modifié le logement « ${fields.title} »`));
         await store.update(state.code, patch);
         closeSheet(); toast('Logement modifié ✏️');
       } else {
         const id = uid();
-        await store.update(state.code, { [`links.${id}`]: { id, ...fields, by: state.me.id, at: Date.now(), votes: { [state.me.id]: 1 } } });
+        await store.update(state.code, { [`links.${id}`]: { id, ...fields, by: state.me.id, at: Date.now(), votes: { [state.me.id]: 1 } }, ...feed(`lk_${id}`, 'link', `a proposé un logement : ${fields.title}${fields.price ? ` (${fields.price} € ${fields.priceType === 'night' ? '/ nuit' : 'total'})` : ''}`) });
         closeSheet(); toast('Logement ajouté 🏡');
       }
     };
@@ -729,6 +738,7 @@ document.addEventListener('click', async (e) => {
       const name = $('#ob-name').value.trim(); if (!name) return toast('Choisis un pseudo');
       state.me = { id: uid(), name, color: state._color ?? 0 }; local.set('bw:me', state.me); render();
       const pending = local.get('bw:pending'); if (pending) { local.del('bw:pending'); joinByCode(pending); }
+      setTimeout(setupPush, 1500);
       break;
     }
     case 'new': sheetTrip(); break;
@@ -749,7 +759,7 @@ document.addEventListener('click', async (e) => {
       const from = el.dataset.from, to = el.dataset.to, amount = +el.dataset.amt;
       if (!confirm(`${memberOf(t, from).name} a remboursé ${euro(amount)} à ${memberOf(t, to).name} ?`)) return;
       const id = uid();
-      await store.update(state.code, { [`expenses.${id}`]: { id, type: 'transfer', title: 'Remboursement', amount, by: from, for: [to], at: Date.now(), createdBy: state.me.id } });
+      await store.update(state.code, { [`expenses.${id}`]: { id, type: 'transfer', title: 'Remboursement', amount, by: from, for: [to], at: Date.now(), createdBy: state.me.id }, ...feed(`ex_${id}`, 'settle', `a enregistré un remboursement : ${memberOf(t, from).name} → ${memberOf(t, to).name} (${euro(amount)})`) });
       toast('Remboursement enregistré 🤝'); break;
     }
     case 'del-exp': if (confirm('Supprimer cette dépense ?')) await store.update(state.code, { [`expenses.${el.dataset.id}`]: null }); break;
@@ -760,7 +770,7 @@ document.addEventListener('click', async (e) => {
       t.avail = t.avail || {}; t.avail[state.me.id] = t.avail[state.me.id] || {};
       if (next) t.avail[state.me.id][k] = next; else delete t.avail[state.me.id][k];
       renderKeepScroll();
-      store.update(state.code, { [`avail.${state.me.id}.${k}`]: next }).catch(() => toast('Erreur de synchro'));
+      store.update(state.code, { [`avail.${state.me.id}.${k}`]: next, ...feed(`av_${state.me.id}`, 'avail', 'a mis à jour ses dispos 📅') }).catch(() => toast('Erreur de synchro'));
       navigator.vibrate?.(8);
       break;
     }
@@ -780,7 +790,7 @@ document.addEventListener('click', async (e) => {
         else if (q === 'we' && (dow === 0 || dow === 6)) patch[`avail.${state.me.id}.${k}`] = 'yes';
       }
       if (q === 'clear') await store.update(state.code, { [`avail.${state.me.id}`]: {} });
-      else await store.update(state.code, patch);
+      else await store.update(state.code, { ...patch, ...feed(`av_${state.me.id}`, 'avail', 'a mis à jour ses dispos 📅') });
       toast(q === 'clear' ? 'Dispos effacées' : 'Dispos ajoutées ✓');
       break;
     }
@@ -870,10 +880,37 @@ function iosInstallHint() {
   $('#upd-later').onclick = () => { local.set('bw:a2hs', Date.now()); bar.classList.remove('show'); };
 }
 
+/* ═════════════════ Notifications push (Android) ═════════════════
+   Le téléphone s'enregistre (jeton FCM + escapades suivies) dans Firestore « devices ».
+   Toutes les 10 min, GitHub Actions lit le journal « feed » des escapades et envoie les notifs. */
+const Push = () => window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.PushNotifications : null;
+let pushToken = local.get('bw:pushtoken');
+async function syncDevice() {
+  if (!pushToken || !state.me || !store?.saveDevice) return;
+  try { await store.saveDevice({ token: pushToken, uid: state.me.id, trips: state.myTrips.slice(0, 50), platform: 'android' }); } catch (e) { console.warn('device', e); }
+}
+async function setupPush() {
+  const P = Push();
+  if (!P || store.mode !== 'cloud') return;
+  try {
+    P.addListener('registration', (t) => { pushToken = t.value; local.set('bw:pushtoken', pushToken); syncDevice(); });
+    P.addListener('registrationError', (e) => console.warn('push', e));
+    P.addListener('pushNotificationActionPerformed', (a) => {
+      const code = a?.notification?.data?.code;
+      if (code && state.myTrips.includes(code)) { closeSheet?.(); openTrip(code); }
+    });
+    await P.createChannel?.({ id: 'tripizi', name: 'Nouveautés des escapades', description: 'Quand un pote ajoute des dispos, un logement ou une dépense', importance: 4, vibration: true }).catch(() => {});
+    let perm = await P.checkPermissions();
+    if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await P.requestPermissions();
+    if (perm.receive === 'granted') await P.register();
+  } catch (e) { console.warn('push', e); }
+}
+
 /* ═════════════════ Démarrage ═════════════════ */
 (async function boot() {
   // Confirme au module de mise à jour que cette version démarre bien (sinon retour automatique à la précédente)
   Updater()?.notifyAppReady?.().catch(() => {});
+  if (state.me) setTimeout(setupPush, 3000);
   for (const c of state.myTrips) { const cached = local.get(`bw:cache:${c}`); if (cached) state.cache[c] = cached; }
   store = await createStore();
   render();

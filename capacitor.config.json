@@ -15,6 +15,13 @@
       "appReadyTimeout": 15000,
       "autoDeleteFailed": true,
       "autoDeletePrevious": true
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   }
 }

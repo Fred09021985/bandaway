@@ -1,0 +1,30 @@
+name: Notifications Tripizi
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts/notifier
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Envoyer les notifications
+        working-directory: scripts/notifier
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then echo "Secret FIREBASE_SERVICE_ACCOUNT non configuré"; exit 0; fi
+          npm install --no-audit --no-fund --silent
+          node notify.mjs

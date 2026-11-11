@@ -1,4 +1,4 @@
-// Génère les visuels source (icône + splash) pour @capacitor/assets — thème PSG
+// Génère les visuels source (icône + splash) pour @capacitor/assets — thème violet Néon
 import sharp from 'sharp';
 const defs = `<defs>
 <linearGradient id="kit" x1="0" y1="0" x2="1" y2="0">
@@ -27,4 +27,8 @@ import { mkdirSync } from 'node:fs';
 mkdirSync('www/icons', { recursive: true });
 const full = svg(1024, 1024, `${bg(1024)}${mark(13, 200, 200)}`);
 for (const [n, sz] of [['apple-touch-icon', 180], ['icon-192', 192], ['icon-512', 512]]) await sharp(full).resize(sz, sz).png().toFile(`www/icons/${n}.png`);
+// Petite icône de notification Android (silhouette blanche sur fond transparent)
+mkdirSync('assets/notif', { recursive: true });
+const notif = svg(48, 48, `<g transform="translate(0,2)"><path d="M3 40 17 17l8 11 6-8 14 20z" fill="#fff"/><circle cx="35" cy="11" r="5.5" fill="#fff"/></g>`);
+for (const [d, sz] of [['mdpi', 24], ['hdpi', 36], ['xhdpi', 48], ['xxhdpi', 72], ['xxxhdpi', 96]]) await sharp(notif).resize(sz, sz).png().toFile(`assets/notif/${d}.png`);
 console.log('ok');

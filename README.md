@@ -60,6 +60,21 @@ L'app intègre [Capgo](https://github.com/Cap-go/capacitor-updater) en mode **au
 
 ---
 
+## 🔔 Notifications
+
+Quand un pote ajoute des dispos, un logement, une dépense ou rejoint l'escapade, les autres reçoivent une notification Android (même app fermée), en 5 à 15 min.
+
+- L'app écrit chaque nouveauté dans le journal `feed` de l'escapade et enregistre le téléphone (jeton FCM) dans la collection `devices`.
+- `.github/workflows/notify.yml` tourne toutes les 10 min et envoie les notifications via Firebase Cloud Messaging (`scripts/notifier/notify.mjs`).
+- Secret GitHub requis : **`FIREBASE_SERVICE_ACCOUNT`** (Firebase → Paramètres du projet → Comptes de service → Générer une nouvelle clé privée, coller tout le JSON).
+- ⚠️ GitHub met en pause les tâches planifiées d'un dépôt sans activité pendant 60 jours : relancer depuis l'onglet Actions si besoin.
+
+## 🔑 Signature de l'APK
+
+Secret GitHub **`ANDROID_KEYSTORE`** (keystore en base64, alias `androiddebugkey`, mot de passe `android`) : tous les APK sont signés avec la même clé et s'installent par-dessus les précédents.
+
+---
+
 ## 💬 Avis des utilisateurs
 
 Dans l'app : **« Une idée pour améliorer Tripizi ? »** (accueil) ou **Mon profil → Donner mon avis**. Trois types : 💡 Idée, 🐞 Bug, ❤️ J'aime.

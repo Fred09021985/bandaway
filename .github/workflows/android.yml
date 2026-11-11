@@ -56,6 +56,9 @@ jobs:
           npx capacitor-assets generate --android \
             --iconBackgroundColor '#0a0614' --iconBackgroundColorDark '#0a0614' \
             --splashBackgroundColor '#0a0614' --splashBackgroundColorDark '#0a0614'
+          # Notifications push : configuration Firebase Android (fichier public, sans secret)
+          cp android-config/google-services.json android/app/google-services.json
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/drawable-$d; cp assets/notif/$d.png android/app/src/main/res/drawable-$d/ic_stat_tripizi.png; done
           npx cap sync android
           # Liens d'invitation : mescons://join?c=CODE ouvre l'app
           python3 - <<'PY'
@@ -71,9 +74,29 @@ jobs:
           '''
           if 'android:scheme="mescons"' not in s:
               s = s.replace('</activity>', f + '        </activity>', 1)
+          meta = '''
+                  <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_tripizi" />
+                  <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/tripizi_pink" />
+                  <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="tripizi" />
+          '''
+          if 'default_notification_icon' not in s:
+              s = s.replace('<activity', meta + '        <activity', 1)
+          open('android/app/src/main/res/values/tripizi_colors.xml', 'w').write('<?xml version="1.0" encoding="utf-8"?>\n<resources><color name="tripizi_pink">#FF2E97</color></resources>\n')
           open(p, 'w').write(s)
           PY
           grep -n "mescons" android/app/src/main/AndroidManifest.xml
+
+      - name: Clé de signature fixe (secret ANDROID_KEYSTORE)
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          # Même clé à chaque compilation => les nouveaux APK s'installent par-dessus les anciens
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            mkdir -p ~/.android && echo "$ANDROID_KEYSTORE" | base64 -d > ~/.android/debug.keystore
+            keytool -list -keystore ~/.android/debug.keystore -storepass android | grep -i "fingerprint" || true
+          else
+            echo "::warning::Secret ANDROID_KEYSTORE absent : clé temporaire (l'APK ne pourra pas mettre à jour la version précédente)"
+          fi
 
       - name: Compiler l'APK
         working-directory: android

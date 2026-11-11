@@ -1,0 +1,19 @@
+{
+  "project_info": {
+    "project_number": "423891149255",
+    "project_id": "bandaway",
+    "storage_bucket": "bandaway.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423891149255:android:e8aa258e60e490f0fc39e2",
+        "android_client_info": { "package_name": "app.bandaway.trips" }
+      },
+      "oauth_client": [],
+      "api_key": [ { "current_key": "AIzaSyAH8WRtM4-5HzLGL6EWbddnxc00gQWF8kg" } ],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    }
+  ],
+  "configuration_version": "1"
+}
