@@ -1,8 +1,8 @@
-# 🔴🔵 Mes Cons
+# 🔴🔵 Tripizi
 
-**Les escapades entre potes, sans le chaos du groupe WhatsApp.** (anciennement Bandaway)
+**Les escapades entre potes, sans le chaos du groupe WhatsApp.** (anciennement Mes Cons, ex-Bandaway)
 
-Bandaway permet d'organiser des vacances ou un week-end prolongé à plusieurs :
+Tripizi permet d'organiser des vacances ou un week-end prolongé à plusieurs :
 
 - 📅 **Dates** — on définit une période, chacun coche ses jours (dispo / peut-être / pas dispo), et l'app calcule automatiquement **le meilleur créneau** pour la bande.
 - 🏡 **Logements** — on colle des liens Airbnb, Booking, Abritel… avec le prix ; l'app calcule le **coût par personne** et chacun vote ❤️. Le favori remonte en tête.
@@ -27,9 +27,9 @@ Thème bleu marine / rouge / blanc (couleurs PSG), glassmorphism, 100 % mobile, 
    *(ou, sur le site GitHub : « Add file › Upload files » et glisse tout le contenu du dossier, y compris le dossier caché `.github`)*
 3. Va dans l'onglet **Actions** : le workflow **Build Android APK** se lance tout seul (~5 min).
 4. Une fois terminé, l'APK est disponible :
-   - dans l'onglet **Releases** → `Bandaway.apk` ✅
+   - dans l'onglet **Releases** → `Tripizi.apk` ✅
    - ou dans le run Actions → section **Artifacts**.
-5. Sur ton téléphone Android : télécharge `Bandaway.apk`, ouvre-le et autorise « Installer des applis inconnues ».
+5. Sur ton téléphone Android : télécharge `Tripizi.apk`, ouvre-le et autorise « Installer des applis inconnues ».
 
 Chaque `git push` sur `main` recompile une nouvelle version.
 
@@ -37,10 +37,10 @@ Chaque `git push` sur `main` recompile une nouvelle version.
 
 ## 🍏 iPhone (version web installable)
 
-Mes Cons tourne aussi sur iPhone, sans App Store : **https://fred09021985.github.io/bandaway/app/**
+Tripizi tourne aussi sur iPhone, sans App Store : **https://fred09021985.github.io/bandaway/app/**
 
 1. Ouvre le lien dans **Safari**.
-2. Touche **Partager** ⬆️ puis **Sur l'écran d'accueil** → l'icône Mes Cons apparaît, l'app s'ouvre en plein écran.
+2. Touche **Partager** ⬆️ puis **Sur l'écran d'accueil** → l'icône Tripizi apparaît, l'app s'ouvre en plein écran.
 3. Mêmes données (Firestore) que la version Android : Android et iPhone partagent les mêmes escapades.
 
 À chaque push sur `main`, GitHub Actions recopie l'app dans `docs/app` : les iPhone ont la nouvelle version au prochain lancement. Les liens d'invitation détectent l'iPhone et proposent la version web.
@@ -62,7 +62,7 @@ L'app intègre [Capgo](https://github.com/Cap-go/capacitor-updater) en mode **au
 
 ## 💬 Avis des utilisateurs
 
-Dans l'app : **« Une idée pour améliorer Mes Cons ? »** (accueil) ou **Mon profil → Donner mon avis**. Trois types : 💡 Idée, 🐞 Bug, ❤️ J'aime.
+Dans l'app : **« Une idée pour améliorer Tripizi ? »** (accueil) ou **Mon profil → Donner mon avis**. Trois types : 💡 Idée, 🐞 Bug, ❤️ J'aime.
 
 Les avis arrivent dans Firestore, collection **`feedback`** (type, message, pseudo, version de l'app, date). Les utilisateurs peuvent seulement en **envoyer** ; pour les **lire** : [console Firebase → Firestore → Données → feedback](https://console.firebase.google.com/project/bandaway/firestore/databases/-default-/data/~2Ffeedback).
 

@@ -81,25 +81,25 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
           mkdir -p ../dist
-          cp app/build/outputs/apk/debug/app-debug.apk ../dist/Bandaway.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist/Tripizi.apk
 
       - name: Publier l'APK (artefact)
         uses: actions/upload-artifact@v5
         with:
-          name: Bandaway-apk
-          path: dist/Bandaway.apk
+          name: Tripizi-apk
+          path: dist/Tripizi.apk
 
       - name: Publier une release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
-          name: Mes Cons ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
+          name: Tripizi ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
           body: |
-            APK Android de Mes Cons — télécharge `Bandaway.apk` et installe-le (autorise les sources inconnues).
+            APK Android de Tripizi — télécharge `Tripizi.apk` et installe-le (autorise les sources inconnues).
             `update.zip` sert aux mises à jour automatiques dans l'app.
             checksum: ${{ env.UPDATE_SHA256 }}
           files: |
-            dist/Bandaway.apk
+            dist/Tripizi.apk
             dist/update.zip
 
       - name: Publier la version web (iPhone) sur GitHub Pages
