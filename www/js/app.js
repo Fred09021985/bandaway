@@ -338,6 +338,7 @@ function viewCrew(t) {
     const filled = days.filter((k) => av[k]).length;
     return `<div class="member">${avatar(m)}<div style="flex:1"><div class="nm">${esc(m.name)}${id === state.me.id ? '<span class="you">TOI</span>' : ''}${id === t.owner ? ' 👑' : ''}</div>
       <div class="st">${filled ? `${y} jour${y > 1 ? 's' : ''} dispo · ${filled}/${days.length} renseignés` : 'N’a pas encore rempli ses dispos'}</div></div>
+      ${id !== state.me.id ? `<button class="claim" data-act="claim" data-id="${id}">C'est moi</button>` : ''}
       ${filled ? '<span class="chip lime"><span class="dot"></span>OK</span>' : '<span class="chip">⏳</span>'}</div>`;
   }).join('')}</div>
   <div class="spacer"></div>
@@ -561,11 +562,53 @@ async function joinByCode(code) {
   try {
     const t = await store.get(code);
     if (!t) { toast(store.mode === 'local' ? 'Code introuvable sur ce téléphone (mode local)' : 'Code introuvable'); return false; }
+    const twin = Object.entries(t.members || {}).find(([id, m]) => id !== state.me.id && norm(m.name) === norm(state.me.name));
+    if (twin && confirm(`Il y a déjà « ${twin[1].name} » dans cette escapade. C'est toi (ancien téléphone ou réinstallation) ?\n\nOK = reprendre ce compte · Annuler = rejoindre comme nouveau membre`)) {
+      await claimIdentity(twin[0], twin[1], [code]);
+      closeSheet(); openTrip(code); toast(`Content de te revoir, ${twin[1].name} 👋`);
+      return true;
+    }
     await store.update(code, { [`members.${state.me.id}`]: { name: state.me.name, color: state.me.color }, ...feed(`jn_${state.me.id}`, 'join', 'a rejoint l’escapade 🙌') });
     state.myTrips.unshift(code); saveMyTrips();
     closeSheet(); openTrip(code); toast(`Bienvenue dans « ${t.name} » 🙌`);
     return true;
   } catch (e) { console.error(e); toast('Erreur : ' + e.message); return false; }
+}
+
+/* Reprendre un ancien compte (après réinstallation ou changement de téléphone) */
+const norm = (x) => String(x || '').trim().toLowerCase();
+async function claimIdentity(oldId, oldMember, extraCodes = []) {
+  const newId = state.me.id;
+  if (!oldId || oldId === newId) return;
+  const codes = [...new Set([...state.myTrips, ...extraCodes])];
+  for (const code of codes) {
+    let t; try { t = await store.get(code); } catch { continue; }
+    if (!t) continue;
+    const p = {};
+    const inNew = !!t.members?.[newId], inOld = !!t.members?.[oldId];
+    if (!inNew && !inOld && !extraCodes.includes(code)) continue;
+    if (!inOld) p[`members.${oldId}`] = { name: oldMember.name, color: oldMember.color ?? 0 };
+    if (inNew) p[`members.${newId}`] = null;
+    if (t.ghosts?.[oldId]) p[`ghosts.${oldId}`] = null;
+    const nav = t.avail?.[newId];
+    if (nav && Object.keys(nav).length) p[`avail.${oldId}`] = { ...(t.avail?.[oldId] || {}), ...nav };
+    if (t.avail?.[newId] !== undefined) p[`avail.${newId}`] = null;
+    for (const [lid, l] of Object.entries(t.links || {})) {
+      if (l.by === newId) p[`links.${lid}.by`] = oldId;
+      if (l.votes?.[newId]) { p[`links.${lid}.votes.${newId}`] = null; p[`links.${lid}.votes.${oldId}`] = 1; }
+    }
+    for (const [eid, e] of Object.entries(t.expenses || {})) {
+      const sw = (x) => (x === newId ? oldId : x);
+      if (e.by === newId || e.createdBy === newId || (e.for || []).includes(newId))
+        p[`expenses.${eid}`] = { ...e, by: sw(e.by), createdBy: sw(e.createdBy), for: [...new Set((e.for || []).map(sw))] };
+    }
+    for (const k of Object.keys(t.feed || {})) if (k.endsWith(newId)) p[`feed.${k}`] = null;
+    if (Object.keys(p).length) await store.update(code, p);
+  }
+  state.me = { id: oldId, name: oldMember.name, color: oldMember.color ?? state.me.color };
+  local.set('bw:me', state.me);
+  for (const c of extraCodes) if (!state.myTrips.includes(c)) state.myTrips.unshift(c);
+  saveMyTrips();
 }
 
 /* Lien d'invitation : https://…/join.html?c=CODE (page web) ou mescons://join?c=CODE (ouvre l'app) */
@@ -801,6 +844,14 @@ document.addEventListener('click', async (e) => {
       break;
     }
     case 'del-link': if (confirm('Supprimer ce logement ?')) await store.update(state.code, { [`links.${el.dataset.id}`]: null }); break;
+    case 'claim': {
+      const oldId = el.dataset.id, m = t.members?.[oldId];
+      if (!m) return;
+      if (!confirm(`Reprendre le compte « ${m.name} » ?\n\nTon profil actuel « ${state.me.name} » sera fusionné dedans (dispos, votes et dépenses compris), sur toutes tes escapades.`)) return;
+      try { await claimIdentity(oldId, m); toast(`C'est bon, tu es de nouveau ${m.name} 👋`); renderKeepScroll(); }
+      catch (e) { console.error(e); toast('Erreur : ' + e.message); }
+      break;
+    }
     case 'leave': {
       const myBal = computeBalances(t).bal[state.me.id] || 0;
       if (Math.abs(myBal) > 0) return toast(`Règle d'abord ton solde (${euro(myBal)}) avant de partir`);
