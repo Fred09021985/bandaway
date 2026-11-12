@@ -33,6 +33,7 @@ function localStore() {
   return {
     mode: 'local',
     async sendFeedback(fb) { const all = LS.get('bw:feedback', []); all.push({ ...fb, at: Date.now() }); LS.set('bw:feedback', all); },
+    async saveDevice() {},
     async create(trip) { LS.set(key(trip.code), trip); emit(trip.code); },
     async get(code) { return LS.get(key(code)); },
     async update(code, patch) {
@@ -61,6 +62,11 @@ async function cloudStore() {
   return {
     mode: 'cloud',
     async sendFeedback(data) { await fb_addFeedback(data); },
+    // Appareil pour les notifications push : id = empreinte du jeton (le jeton lui-même n'est jamais lisible par les autres)
+    async saveDevice(d) {
+      const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(d.token)))).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
+      await fb.setDoc(fb.doc(db, 'devices', h), { ...d, at: fb.serverTimestamp() });
+    },
     async create(trip) { await fb.setDoc(ref(trip.code), trip); },
     async get(code) { const s = await fb.getDoc(ref(code)); return s.exists() ? s.data() : null; },
     async update(code, patch) {
