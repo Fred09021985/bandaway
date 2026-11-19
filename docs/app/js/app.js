@@ -117,6 +117,29 @@ function detectSource(url) {
     return { k: 'other', label: h, ic: '🔗' };
   } catch { return { k: 'other', label: 'Lien', ic: '🔗' }; }
 }
+/* Lien de l'annonce pré-rempli avec les dates de l'escapade et le nombre de voyageurs → prix réels */
+function datedUrl(t, url) {
+  try {
+    const u = new URL(url); const k = detectSource(url).k;
+    const n = Math.max(1, Object.keys(t.members || {}).length);
+    if (!t.start || !t.end) return url;
+    const set = (o) => { for (const [a, b] of Object.entries(o)) u.searchParams.set(a, b); };
+    if (k === 'airbnb') set({ check_in: t.start, check_out: t.end, adults: n });
+    else if (k === 'booking') set({ checkin: t.start, checkout: t.end, group_adults: n, no_rooms: 1 });
+    else if (k === 'abritel') set({ startDate: t.start, endDate: t.end, adults: n, chkin: t.start, chkout: t.end });
+    else return url;
+    return u.toString();
+  } catch { return url; }
+}
+const DAY = 864e5;
+function stayStatus(l) {
+  const a = l.avail;
+  if (a?.state === 'gone') return 'gone';
+  if (a?.state === 'ok' && Date.now() - a.at < 2 * DAY) return 'ok';
+  return 'check';
+}
+const ago = (ts) => { const d = Math.floor((Date.now() - ts) / DAY); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+
 function guessTitle(url) {
   try {
     const u = new URL(url);
@@ -295,11 +318,12 @@ function tripNights(t) { return t.start && t.end ? Math.max(1, Math.round((fromK
 function stayCost(t, l) {
   const n = Math.max(1, Object.keys(t.members || {}).length);
   const total = l.price ? (l.priceType === 'night' ? l.price * tripNights(t) : l.price) : 0;
-  return { total, perPers: total ? total / n : 0 };
+  return { total, perPers: total ? total / n : 0, perPersNight: total ? total / n / tripNights(t) : 0 };
 }
 const likeCount = (l) => Object.values(l.votes || {}).filter(Boolean).length;
 function rankedStays(t) {
-  return Object.values(t.links || {}).sort((a, b) => likeCount(b) - likeCount(a) || (a.at || 0) - (b.at || 0));
+  const g = (l) => (stayStatus(l) === 'gone' ? 1 : 0);
+  return Object.values(t.links || {}).sort((a, b) => g(a) - g(b) || likeCount(b) - likeCount(a) || (a.at || 0) - (b.at || 0));
 }
 
 function viewStays(t) {
@@ -307,24 +331,30 @@ function viewStays(t) {
   const links = rankedStays(t);
   if (!links.length) return `<div class="glass empty"><div class="big">🏡</div><h3>Aucun logement proposé</h3><p>Colle un lien Airbnb, Booking ou Abritel.<br>La bande vote, le meilleur remonte en tête.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-link">${I.plus.replace('<svg', '<svg width="18" height="18"')}Proposer un logement</button></div>`;
   const cap = groupBudget(t).min;
-  const liked = links.filter((l) => likeCount(l) > 0);
+  const liked = links.filter((l) => likeCount(l) > 0 && stayStatus(l) !== 'gone');
+  const toCheck = links.filter((l) => stayStatus(l) === 'check').length;
   // Rang avec ex æquo : même nombre de ❤ = même rang
   const rankOf = new Map(); let prev = -1, r = 0;
   liked.forEach((l, i) => { const c = likeCount(l); if (c !== prev) { r = i + 1; prev = c; } rankOf.set(l.id, r); });
   const medal = ['🥇', '🥈', '🥉'];
   const podium = liked.length ? `<div class="glass podium">
       <div class="podium-head"><span class="eyebrow">Classement de la bande</span><small class="muted">${liked.length} logement${liked.length > 1 ? 's' : ''} liké${liked.length > 1 ? 's' : ''}</small></div>
-      ${liked.slice(0, 3).map((l) => { const c = stayCost(t, l); return `<div class="podium-row"><span class="pm">${medal[rankOf.get(l.id) - 1] || rankOf.get(l.id)}</span><b>${esc(l.title)}</b><span class="pv">${c.perPers ? `${Math.round(c.perPers)} €/pers · ` : ''}${likeCount(l)} ❤</span></div>`; }).join('')}
+      ${liked.slice(0, 3).map((l) => { const c = stayCost(t, l); return `<div class="podium-row"><span class="pm">${medal[rankOf.get(l.id) - 1] || rankOf.get(l.id)}</span><b>${esc(l.title)}</b><span class="pv">${c.perPersNight ? `${Math.round(c.perPersNight)} €/pers/nuit · ` : ''}${likeCount(l)} ❤</span></div>`; }).join('')}
     </div>` : `<p class="muted podium-hint">Like tes logements préférés ❤ : les plus aimés remontent en tête.</p>`;
-  return podium + links.map((l) => {
+  const checkBar = toCheck ? `<button class="glass recheck" data-act="check-all">🔎 <span><b>${toCheck} logement${toCheck > 1 ? 's' : ''} à revérifier</b><small>Dispo non confirmée depuis plus de 2 jours</small></span>${I.arrow}</button>` : '';
+  return checkBar + podium + links.map((l) => {
     const src = detectSource(l.url);
     const votes = Object.keys(l.votes || {}).filter((id) => l.votes[id]);
     const voted = votes.includes(state.me.id);
     const by = t.members?.[l.by];
-    const { total, perPers } = stayCost(t, l);
+    const { total, perPers, perPersNight } = stayCost(t, l);
+    const st = stayStatus(l);
+    const stChip = st === 'gone' ? `<span class="chip over">❌ Plus dispo · ${esc(t.members?.[l.avail.by]?.name || '?')}</span>`
+      : st === 'ok' ? `<span class="chip lime">✓ Dispo vérifiée ${ago(l.avail.at)}</span>`
+      : `<span class="chip warn">⏳ Dispo à vérifier</span>`;
     const rk = rankOf.get(l.id);
-    const fit = cap && perPers ? (perPers <= cap ? '<span class="chip lime">✓ dans le budget</span>' : `<span class="chip over">${Math.round(perPers - cap)} € au-dessus du budget</span>`) : '';
-    return `<article class="glass stay${rk === 1 ? ' top' : ''}">
+    const fit = cap && perPers && st !== 'gone' ? (perPers <= cap ? '<span class="chip lime">✓ dans le budget</span>' : `<span class="chip over">${Math.round(perPers - cap)} € au-dessus du budget</span>`) : '';
+    return `<article class="glass stay${rk === 1 ? ' top' : ''}${st === 'gone' ? ' gone' : ''}">
       <div class="stay-top">
         <div class="stay-thumb ${src.k}">${src.ic}${rk ? `<span class="rank r${Math.min(rk, 4)}">${rk}</span>` : ''}</div>
         <div class="stay-info">
@@ -333,12 +363,13 @@ function viewStays(t) {
           ${l.price ? `<div class="prices">
             <span class="chip">${l.price} € ${l.priceType === 'night' ? '/ nuit' : 'total'}</span>
             ${l.priceType === 'night' ? `<span class="chip">${nights} nuit${nights > 1 ? 's' : ''} · ${Math.round(total)} €</span>` : ''}
-            ${total ? `<span class="chip neon">≈ ${Math.round(perPers)} € / pers.</span>` : ''}
+            ${total ? `<span class="chip neon">≈ ${Math.round(perPersNight)} € / pers. / nuit</span><span class="chip">${Math.round(perPers)} € / pers. le séjour</span>` : ''}
             ${fit}
           </div>` : ''}
         </div>
       </div>
       ${l.note ? `<div class="stay-note">${esc(l.note)}</div>` : ''}
+      <div class="stay-avail">${stChip}<button class="link-btn" data-act="check-stay" data-id="${l.id}">${st === 'gone' ? 'Elle est revenue ?' : 'Vérifier'}</button></div>
       <div class="stay-foot">
         <div class="row">
           <button class="vote ${voted ? 'on' : ''}" data-act="vote" data-id="${l.id}">${I.heart}${votes.length}</button>
@@ -347,7 +378,7 @@ function viewStays(t) {
         <div class="row" style="gap:6px">
           <button class="icon-btn" data-act="edit-link" data-id="${l.id}" aria-label="Modifier" style="width:38px;height:38px">${I.edit}</button>
           ${l.by === state.me.id ? `<button class="icon-btn" data-act="del-link" data-id="${l.id}" aria-label="Supprimer" style="width:38px;height:38px">${I.trash}</button>` : ''}
-          <a class="btn btn-ghost btn-sm" href="${esc(l.url)}" target="_blank" rel="noopener">Voir ${I.ext.replace('<svg', '<svg width="15" height="15"')}</a>
+          <a class="btn btn-ghost btn-sm" href="${esc(datedUrl(t, l.url))}" target="_blank" rel="noopener">Voir ${I.ext.replace('<svg', '<svg width="15" height="15"')}</a>
         </div>
       </div>
     </article>`;
@@ -366,7 +397,7 @@ function viewBudget(t) {
   const mine = Number(t.budgets?.[state.me.id]) || 0;
   const n = Math.max(1, g.ids.length);
   const nights = tripNights(t);
-  const best = rankedStays(t).find((l) => l.price && likeCount(l) > 0) || null;
+  const best = rankedStays(t).find((l) => l.price && likeCount(l) > 0 && stayStatus(l) !== 'gone') || null;
   const stayPP = best ? stayCost(t, best).perPers : 0;
   const spentPP = Object.values(t.expenses || {}).filter((e) => e.type !== 'transfer').reduce((a, e) => a + (Number(e.amount) || 0), 0) / 100 / n;
   const estPP = stayPP + spentPP;
@@ -425,6 +456,34 @@ function sheetBudget(first) {
     };
   });
 }
+/* Vérifier qu'un logement est toujours libre aux dates de l'escapade */
+function sheetCheckStay(ids) {
+  const t = state.trip; if (!t) return;
+  const list = ids.map((id) => t.links?.[id]).filter(Boolean);
+  if (!list.length) return;
+  openSheet(`
+    <h2>Toujours dispo ?</h2>
+    <p class="lead">Ouvre l'annonce : les dates de l'escapade (${fmt(t.start)} – ${fmt(t.end)}) et le nombre de voyageurs sont déjà remplis. Puis dis à la bande ce que tu as vu.</p>
+    <div class="stack">${list.map((l) => `<div class="glass chk">
+      <b>${esc(l.title)}</b>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <a class="btn btn-ghost btn-sm" href="${esc(datedUrl(t, l.url))}" target="_blank" rel="noopener">Ouvrir l'annonce ${I.ext.replace('<svg', '<svg width="14" height="14"')}</a>
+        <button class="btn btn-sm ok" data-avail="ok" data-id="${l.id}">✅ Dispo</button>
+        <button class="btn btn-sm ko" data-avail="gone" data-id="${l.id}">❌ Plus dispo</button>
+      </div></div>`).join('')}
+    </div>`, (root) => {
+    root.querySelectorAll('[data-avail]').forEach((b) => b.onclick = async () => {
+      const id = b.dataset.id, v = b.dataset.avail, l = t.links?.[id];
+      try {
+        await store.update(state.code, { [`links.${id}.avail`]: { state: v, by: state.me.id, at: Date.now() },
+          ...(v === 'gone' ? feed(`ga_${id}`, 'link', `signale que « ${l?.title || 'un logement'} » n'est plus dispo ❌`) : {}) });
+        b.closest('.chk').classList.add('done'); b.closest('.chk').querySelector('b').textContent += v === 'ok' ? ' · ✅ dispo' : ' · ❌ plus dispo';
+        if (!root.querySelector('.chk:not(.done)')) setTimeout(closeSheet, 500);
+      } catch (e) { toast('Erreur : ' + e.message); }
+    });
+  });
+}
+
 // Demandé une fois par ouverture d'escapade tant qu'il n'est pas renseigné
 function maybeAskBudget() {
   const t = state.trip;
@@ -953,6 +1012,8 @@ document.addEventListener('click', async (e) => {
     }
     case 'del-link': if (confirm('Supprimer ce logement ?')) await store.update(state.code, { [`links.${el.dataset.id}`]: null }); break;
     case 'set-budget': sheetBudget(false); break;
+    case 'check-stay': sheetCheckStay([el.dataset.id]); break;
+    case 'check-all': sheetCheckStay(rankedStays(t).filter((l) => stayStatus(l) === 'check').map((l) => l.id)); break;
     case 'claim': {
       const oldId = el.dataset.id, m = t.members?.[oldId];
       if (!m) return;
