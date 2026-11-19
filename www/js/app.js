@@ -40,6 +40,7 @@ const I = {
   cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"/><path d="M16 14h.01"/></svg>',
   heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
   ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
@@ -131,7 +132,7 @@ function guessTitle(url) {
 function render() {
   const app = $('#app');
   if (!state.me) return app.innerHTML = viewOnboarding();
-  if (state.screen === 'trip' && state.trip) app.innerHTML = viewTrip();
+  if (state.screen === 'trip' && state.trip) { app.innerHTML = viewTrip(); maybeAskBudget(); }
   else app.innerHTML = viewHome();
 }
 
@@ -212,10 +213,11 @@ function viewTrip() {
     <nav class="glass tabs">
       <button class="tab ${state.tab === 'dates' ? 'on' : ''}" data-act="tab" data-tab="dates">${I.cal}Dates</button>
       <button class="tab ${state.tab === 'stays' ? 'on' : ''}" data-act="tab" data-tab="stays">${I.home}Logements${links.length ? `<span class="n">${links.length}</span>` : ''}</button>
+      <button class="tab ${state.tab === 'budget' ? 'on' : ''}" data-act="tab" data-tab="budget">${I.wallet}Budget${t.budgets?.[state.me.id] ? '' : '<span class="n">!</span>'}</button>
       <button class="tab ${state.tab === 'money' ? 'on' : ''}" data-act="tab" data-tab="money">${I.euro}Dépenses${exps ? `<span class="n">${exps}</span>` : ''}</button>
       <button class="tab ${state.tab === 'crew' ? 'on' : ''}" data-act="tab" data-tab="crew">${I.users}Bande</button>
     </nav>
-    ${state.tab === 'dates' ? viewDates(t) : state.tab === 'stays' ? viewStays(t) : state.tab === 'money' ? viewMoney(t) : viewCrew(t)}
+    ${state.tab === 'dates' ? viewDates(t) : state.tab === 'stays' ? viewStays(t) : state.tab === 'budget' ? viewBudget(t) : state.tab === 'money' ? viewMoney(t) : viewCrew(t)}
   </section>
   ${state.tab === 'stays' ? `<button class="fab" data-act="add-link">${I.plus}Ajouter un lien</button>` : ''}
   ${state.tab === 'money' && Object.keys(t.expenses || {}).length ? `<button class="fab" data-act="add-exp">${I.plus}Ajouter une dépense</button>` : ''}`;
@@ -288,28 +290,51 @@ function viewDates(t) {
     }).join('')}${rankedAll.length > TOP ? `<button class="btn btn-ghost btn-sm" data-act="all-days" style="width:100%;margin-top:10px">${state.allDays ? 'Voir moins' : `Voir les ${rankedAll.length} jours`}</button>` : ''}</div>` : ''}`;
 }
 
-function viewStays(t) {
+/* Prix d'un logement pour toute l'escapade et par personne */
+function tripNights(t) { return t.start && t.end ? Math.max(1, Math.round((fromKey(t.end) - fromKey(t.start)) / 864e5)) : 1; }
+function stayCost(t, l) {
   const n = Math.max(1, Object.keys(t.members || {}).length);
-  // Nuits de l'escapade : du jour d'arrivée (début) au jour de départ (fin)
-  const nights = t.start && t.end ? Math.max(1, Math.round((fromKey(t.end) - fromKey(t.start)) / 864e5)) : 1;
-  const links = Object.values(t.links || {}).sort((a, b) => Object.keys(b.votes || {}).length - Object.keys(a.votes || {}).length || a.at - b.at);
+  const total = l.price ? (l.priceType === 'night' ? l.price * tripNights(t) : l.price) : 0;
+  return { total, perPers: total ? total / n : 0 };
+}
+const likeCount = (l) => Object.values(l.votes || {}).filter(Boolean).length;
+function rankedStays(t) {
+  return Object.values(t.links || {}).sort((a, b) => likeCount(b) - likeCount(a) || (a.at || 0) - (b.at || 0));
+}
+
+function viewStays(t) {
+  const nights = tripNights(t);
+  const links = rankedStays(t);
   if (!links.length) return `<div class="glass empty"><div class="big">🏡</div><h3>Aucun logement proposé</h3><p>Colle un lien Airbnb, Booking ou Abritel.<br>La bande vote, le meilleur remonte en tête.</p><div class="spacer"></div><button class="btn btn-primary" data-act="add-link">${I.plus.replace('<svg', '<svg width="18" height="18"')}Proposer un logement</button></div>`;
-  return links.map((l, i) => {
+  const cap = groupBudget(t).min;
+  const liked = links.filter((l) => likeCount(l) > 0);
+  // Rang avec ex æquo : même nombre de ❤ = même rang
+  const rankOf = new Map(); let prev = -1, r = 0;
+  liked.forEach((l, i) => { const c = likeCount(l); if (c !== prev) { r = i + 1; prev = c; } rankOf.set(l.id, r); });
+  const medal = ['🥇', '🥈', '🥉'];
+  const podium = liked.length ? `<div class="glass podium">
+      <div class="podium-head"><span class="eyebrow">Classement de la bande</span><small class="muted">${liked.length} logement${liked.length > 1 ? 's' : ''} liké${liked.length > 1 ? 's' : ''}</small></div>
+      ${liked.slice(0, 3).map((l) => { const c = stayCost(t, l); return `<div class="podium-row"><span class="pm">${medal[rankOf.get(l.id) - 1] || rankOf.get(l.id)}</span><b>${esc(l.title)}</b><span class="pv">${c.perPers ? `${Math.round(c.perPers)} €/pers · ` : ''}${likeCount(l)} ❤</span></div>`; }).join('')}
+    </div>` : `<p class="muted podium-hint">Like tes logements préférés ❤ : les plus aimés remontent en tête.</p>`;
+  return podium + links.map((l) => {
     const src = detectSource(l.url);
-    const votes = Object.keys(l.votes || {});
+    const votes = Object.keys(l.votes || {}).filter((id) => l.votes[id]);
     const voted = votes.includes(state.me.id);
     const by = t.members?.[l.by];
-    const total = l.priceType === 'night' ? l.price * nights : l.price;
-    return `<article class="glass stay">
+    const { total, perPers } = stayCost(t, l);
+    const rk = rankOf.get(l.id);
+    const fit = cap && perPers ? (perPers <= cap ? '<span class="chip lime">✓ dans le budget</span>' : `<span class="chip over">${Math.round(perPers - cap)} € au-dessus du budget</span>`) : '';
+    return `<article class="glass stay${rk === 1 ? ' top' : ''}">
       <div class="stay-top">
-        <div class="stay-thumb ${src.k}">${src.ic}${i === 0 && votes.length ? '<span class="rank">1</span>' : ''}</div>
+        <div class="stay-thumb ${src.k}">${src.ic}${rk ? `<span class="rank r${Math.min(rk, 4)}">${rk}</span>` : ''}</div>
         <div class="stay-info">
           <h3>${esc(l.title)}</h3>
           <div class="src">${src.label} · proposé par ${esc(by?.name || '?')}${l.editedAt ? ' · modifié' : ''}</div>
           ${l.price ? `<div class="prices">
             <span class="chip">${l.price} € ${l.priceType === 'night' ? '/ nuit' : 'total'}</span>
             ${l.priceType === 'night' ? `<span class="chip">${nights} nuit${nights > 1 ? 's' : ''} · ${Math.round(total)} €</span>` : ''}
-            ${total ? `<span class="chip neon">≈ ${Math.round(total / n)} € / pers.</span>` : ''}
+            ${total ? `<span class="chip neon">≈ ${Math.round(perPers)} € / pers.</span>` : ''}
+            ${fit}
           </div>` : ''}
         </div>
       </div>
@@ -327,6 +352,87 @@ function viewStays(t) {
       </div>
     </article>`;
   }).join('');
+}
+
+/* ═════════════════ Budget ═════════════════ */
+const eur = (v) => `${Math.round(v).toLocaleString('fr-FR')} €`;
+function groupBudget(t) {
+  const ids = Object.keys(t.members || {});
+  const vals = ids.map((id) => Number(t.budgets?.[id]) || 0).filter((v) => v > 0);
+  return { ids, vals, declared: vals.length, min: vals.length ? Math.min(...vals) : 0, max: vals.length ? Math.max(...vals) : 0, avg: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 };
+}
+function viewBudget(t) {
+  const g = groupBudget(t);
+  const mine = Number(t.budgets?.[state.me.id]) || 0;
+  const n = Math.max(1, g.ids.length);
+  const nights = tripNights(t);
+  const best = rankedStays(t).find((l) => l.price && likeCount(l) > 0) || null;
+  const stayPP = best ? stayCost(t, best).perPers : 0;
+  const spentPP = Object.values(t.expenses || {}).filter((e) => e.type !== 'transfer').reduce((a, e) => a + (Number(e.amount) || 0), 0) / 100 / n;
+  const estPP = stayPP + spentPP;
+  const ref = g.min;
+  const pct = ref ? Math.min(100, Math.round(estPP / ref * 100)) : 0;
+  const over = ref && estPP > ref;
+  const scale = Math.max(g.max, estPP, 1);
+  return `
+  <div class="glass budget-me">
+    <div><span class="eyebrow">Mon budget</span>
+      <div class="bm-val">${mine ? eur(mine) : '<span class="muted">Pas encore indiqué</span>'}</div>
+      <small class="muted">par personne, pour toute l'escapade (${nights} nuit${nights > 1 ? 's' : ''}) : logement, transport, sorties</small></div>
+    <button class="btn ${mine ? 'btn-ghost' : 'btn-primary'} btn-sm" data-act="set-budget">${mine ? 'Modifier' : 'Indiquer'}</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="glass budget-sum">
+    <div class="bs-grid">
+      <div><small>Budget le plus serré</small><b>${ref ? eur(ref) : '–'}</b></div>
+      <div><small>Moyenne</small><b>${g.avg ? eur(Math.round(g.avg)) : '–'}</b></div>
+      <div><small>Renseignés</small><b>${g.declared}/${g.ids.length}</b></div>
+    </div>
+    ${ref ? `<div class="gauge"><div class="gauge-fill ${over ? 'over' : ''}" style="width:${pct}%"></div></div>
+    <p class="bs-note">${estPP ? `Estimation actuelle : <b>${eur(Math.round(estPP))} / pers.</b>${best ? ` (logement en tête « ${esc(best.title)} » ${eur(Math.round(stayPP))}${spentPP ? ` + dépenses ${eur(Math.round(spentPP))}` : ''})` : ` (dépenses déjà faites)`}. ${over ? `C'est <b class="hot">${eur(Math.round(estPP - ref))} au-dessus</b> du budget le plus serré.` : `Il reste <b class="ok">${eur(Math.round(ref - estPP))}</b> pour tenir le budget de tout le monde.`}` : 'Like un logement avec un prix pour voir où vous en êtes par rapport au budget de la bande.'}</p>` : '<p class="bs-note">Dès que la bande aura indiqué ses budgets, tu verras ici la marge commune.</p>'}
+  </div>
+  <div class="spacer"></div>
+  <div class="glass" style="padding:4px 0">${g.ids.map((id) => {
+    const m = t.members[id]; const v = Number(t.budgets?.[id]) || 0;
+    return `<div class="member">${avatar(m)}<div style="flex:1;min-width:0"><div class="nm">${esc(m.name)}${id === state.me.id ? '<span class="you">TOI</span>' : ''}</div>
+      ${v ? `<div class="bbar"><span style="width:${Math.max(6, Math.round(v / scale * 100))}%"></span></div>` : '<div class="st">N’a pas encore indiqué son budget</div>'}</div>
+      ${v ? `<b class="bval">${eur(v)}</b>` : '<span class="chip">⏳</span>'}</div>`;
+  }).join('')}</div>`;
+}
+function sheetBudget(first) {
+  const t = state.trip; if (!t) return;
+  const cur = Number(t.budgets?.[state.me.id]) || '';
+  const nights = tripNights(t);
+  const presets = [150, 300, 500, 800, 1200];
+  openSheet(`
+    <h2>${first ? 'Ton budget pour cette escapade' : 'Mon budget'}</h2>
+    <p class="lead">Combien es-tu prêt à dépenser <b>au total, par personne</b>, pour « ${esc(t.name)} » (${nights} nuit${nights > 1 ? 's' : ''}) ? La bande s'en sert pour choisir un logement qui convient à tout le monde.</p>
+    <div class="stack">
+      <div class="field"><label>Budget max (€)</label><input class="input" id="b-val" type="number" inputmode="numeric" min="0" step="10" placeholder="ex. 400" value="${cur}"></div>
+      <div class="presets">${presets.map((v) => `<button class="pick" data-bv="${v}">${v} €</button>`).join('')}</div>
+      <button class="btn btn-primary btn-block" id="b-go">Enregistrer</button>
+      ${first ? '<button class="btn btn-ghost btn-block" id="b-later">Plus tard</button>' : ''}
+    </div>`, (root) => {
+    root.querySelectorAll('[data-bv]').forEach((b) => b.onclick = () => { $('#b-val', root).value = b.dataset.bv; });
+    $('#b-later', root)?.addEventListener('click', () => closeSheet());
+    $('#b-go', root).onclick = async () => {
+      const v = Math.round(Number($('#b-val', root).value));
+      if (!(v > 0) || v > 100000) return toast('Indique un montant en euros');
+      try {
+        await store.update(state.code, { [`budgets.${state.me.id}`]: v, ...feed(`bg_${state.me.id}`, 'budget', 'a indiqué son budget 💰') });
+        closeSheet(); toast('Budget enregistré 💰');
+      } catch (e) { toast('Erreur : ' + e.message); }
+    };
+  });
+}
+// Demandé une fois par ouverture d'escapade tant qu'il n'est pas renseigné
+function maybeAskBudget() {
+  const t = state.trip;
+  if (!t || !state.code || t.budgets?.[state.me.id] || !t.members?.[state.me.id]) return;
+  state.budgetAsked = state.budgetAsked || {};
+  if (state.budgetAsked[state.code] || $('#sheet-root').innerHTML) return;
+  state.budgetAsked[state.code] = true;
+  setTimeout(() => { if (state.screen === 'trip' && !$('#sheet-root').innerHTML) sheetBudget(true); }, 600);
 }
 
 function viewCrew(t) {
@@ -593,6 +699,7 @@ async function claimIdentity(oldId, oldMember, extraCodes = []) {
     const nav = t.avail?.[newId];
     if (nav && Object.keys(nav).length) p[`avail.${oldId}`] = { ...(t.avail?.[oldId] || {}), ...nav };
     if (t.avail?.[newId] !== undefined) p[`avail.${newId}`] = null;
+    if (t.budgets?.[newId]) { if (!t.budgets?.[oldId]) p[`budgets.${oldId}`] = t.budgets[newId]; p[`budgets.${newId}`] = null; }
     for (const [lid, l] of Object.entries(t.links || {})) {
       if (l.by === newId) p[`links.${lid}.by`] = oldId;
       if (l.votes?.[newId]) { p[`links.${lid}.votes.${newId}`] = null; p[`links.${lid}.votes.${oldId}`] = 1; }
@@ -754,6 +861,7 @@ function renderKeepScroll() { const y = window.scrollY; render(); window.scrollT
 
 function openTrip(code) {
   state.code = code; state.trip = state.cache[code] || null; state.screen = 'trip'; state.tab = 'dates'; state.calMode = 'mine';
+  if (state.budgetAsked) delete state.budgetAsked[code];
   watchAll(); render(); window.scrollTo(0, 0);
 }
 function goHome() { state.screen = 'home'; state.code = null; state.trip = null; render(); window.scrollTo(0, 0); }
@@ -844,6 +952,7 @@ document.addEventListener('click', async (e) => {
       break;
     }
     case 'del-link': if (confirm('Supprimer ce logement ?')) await store.update(state.code, { [`links.${el.dataset.id}`]: null }); break;
+    case 'set-budget': sheetBudget(false); break;
     case 'claim': {
       const oldId = el.dataset.id, m = t.members?.[oldId];
       if (!m) return;
